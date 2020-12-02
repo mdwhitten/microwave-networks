@@ -43,9 +43,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="PortCollection.cs" />
-    <Compile Include="ScatteringParameter.cs" />
+    <Compile Include="ScatteringParameters\ScatteringParametersCollection.cs" />
+    <Compile Include="ScatteringParameters\ScatteringParameter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ScatteringParameters\ScatteringParametersMatrix.cs" />
     <Compile Include="TouchstoneFile.cs" />
   </ItemGroup>
   <ItemGroup>
