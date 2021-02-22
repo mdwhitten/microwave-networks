@@ -96,11 +96,20 @@ namespace TouchstoneSnPFileReader.ScatteringParameters
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
+            for (int i = 1; i <= NumPorts; i++)
+            {
+                sb.Append("[");
+                for (int j = 1; j <= NumPorts; j++)
+                {
+                    sb.Append($"S{i}{j}: {this[i, j]}\t");
+                }
+                sb.AppendLine("]");
+            }/*
             foreach (var parameters in this)
             {
                 (int dest, int source) = parameters.Index;
                 sb.AppendLine($"[{dest}, {source}] = {parameters.ScatteringParameter}");
-            }
+            }*/
             return sb.ToString();
         }
     }
