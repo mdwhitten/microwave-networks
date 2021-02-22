@@ -1,7 +1,8 @@
 ﻿using System;
 using static System.Math;
+using System.Numerics;
 
-namespace TouchstoneSnPFileReader
+namespace TouchstoneSnPFileReader.ScatteringParameters
 {
     /// <summary>
     /// Represents a single scattering parameter (S-parameter) for a given frequency, source port, and destination port.
@@ -10,9 +11,9 @@ namespace TouchstoneSnPFileReader
     {
         public double Real { get; }
         public double Imaginary { get; }
-        public double Magnitude_dB => 20 * Log10(Magnitude);
+        public double Magnitude_dB => Magnitude.FromLinear();
         public double Magnitude => Sqrt(Pow(Real, 2) + Pow(Imaginary, 2));
-        public double Angle_deg => Atan(Imaginary / Real);
+        public double Angle_deg => Atan2(Imaginary, Real).ToDegree();
 
         public ScatteringParameter(double real, double imaginary)
         {
@@ -34,9 +35,12 @@ namespace TouchstoneSnPFileReader
 
         public static ScatteringParameter Unity => new ScatteringParameter(1, 0);
 
-        //public static implicit operator ScatteringParameter(double magnitude) => new ScatteringParameter(d)
+        #region Conversions
+        public static implicit operator Complex(ScatteringParameter s) => new Complex(s.Real, s.Imaginary);
+        public static implicit operator ScatteringParameter(Complex c) => new Complex(c.Real, c.Imaginary);
+        #endregion
         #region Overrides
-        public override string ToString() => $"{{{Magnitude_dB} dB, {Angle_deg} deg}}";
+        public override string ToString() => $"{{{Magnitude_dB:g3} dB, {Angle_deg:g3} deg}}";
         public override int GetHashCode() => ToString().GetHashCode();
         public override bool Equals(object obj)
         {
@@ -104,6 +108,8 @@ namespace TouchstoneSnPFileReader
     internal static class Extensions
     {
         public static double ToRad(this double angle_deg) => angle_deg * PI / 180;
-        public static double ToLinear(this double magnitude_dB) => Pow(10, magnitude_dB / 20);
+        public static double ToDegree(this double angle_rad) => angle_rad * 180 / PI;
+        public static double ToLinear(this double magnitude_dB) => Pow(10, magnitude_dB / 10);
+        public static double FromLinear(this double magnitude) => 10 * Log10(magnitude);
     }
 }
