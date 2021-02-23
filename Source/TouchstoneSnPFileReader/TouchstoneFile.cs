@@ -2,10 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
+using System.Reflection;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace TouchstoneSnPFileReader
 {
+    using ScatteringParameters;
     internal sealed class TouchstoneParameterAttribute : Attribute
     {
         public string FieldName { get; }
@@ -81,9 +85,10 @@ namespace TouchstoneSnPFileReader
     }
     public class TouchstoneFileOptions
     {
-        public FrequencyUnit FrequencyUnit;
+        public FrequencyUnit FrequencyUnit = FrequencyUnit.GHz;
         public ParameterType Parameter = ParameterType.Scattering;
         public FormatType Format = FormatType.MagnitudeAngle;
+        [TouchstoneParameter("R")]
         public float Resistance = 50;
     }
     public class TouchstoneFileKeywords
@@ -105,17 +110,44 @@ namespace TouchstoneSnPFileReader
     }
     public class TouchstoneFile
     {
-        private const char CommentChar = '!';
-        private const char OptionChar = '#';
+
 
         public TouchstoneFileOptions Options { get; set; } = new TouchstoneFileOptions();
         public TouchstoneFileKeywords Keywords { get; set; } = new TouchstoneFileKeywords();
 
         public ScatteringParametersCollection ScatteringParameters { get; set; }
 
+        internal TouchstoneFile() { }
         public TouchstoneFile(int numPorts, TouchstoneFileOptions opts)
         {
             ScatteringParameters = new ScatteringParametersCollection(numPorts);
         }
+
+        public static async Task<TouchstoneFile> FromFileAsync(string filePath)
+        {
+            if (filePath == null) throw new ArgumentNullException(nameof(filePath));
+            if (!File.Exists(filePath)) throw new FileNotFoundException("File not found", filePath);
+
+            using (StreamReader s = new StreamReader(filePath))
+            {
+                TouchstoneParser parser = new TouchstoneParser(s);
+                return await parser.ParseAsync();
+            }
+        }
+
+        public static TouchstoneFile FromFile(string filePath) => FromFileAsync(filePath).Result;
+
+        public static async Task<TouchstoneFile> FromTextAsync(string fileText)
+        {
+            if (fileText == null) throw new ArgumentNullException(nameof(fileText));
+
+            using (StringReader s = new StringReader(fileText))
+            {
+                TouchstoneParser parser = new TouchstoneParser(s);
+                return await parser.ParseAsync();
+            }
+        }
+
+        public static TouchstoneFile FromText(string fileText) => FromTextAsync(fileText).Result;
     }
 }

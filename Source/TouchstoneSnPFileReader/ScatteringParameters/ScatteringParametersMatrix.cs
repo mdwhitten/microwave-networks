@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.Numerics;
 
 namespace TouchstoneSnPFileReader.ScatteringParameters
 {
@@ -19,17 +20,67 @@ namespace TouchstoneSnPFileReader.ScatteringParameters
         public static implicit operator PortScatteringParameterPair(KeyValuePair<(int, int), ScatteringParameter> pair)
             => new PortScatteringParameterPair(pair.Key, pair.Value);
     }
+    public enum ListFormat
+    {
+        SourcePortMajor,
+        DestinationPortMajor
+    }
     public class ScatteringParametersMatrix : IEnumerable<PortScatteringParameterPair>
     {
         private Dictionary<(int destPort, int sourcePort), ScatteringParameter> _sMatrix;
 
-        public int NumPorts { get; }
+        public int NumPorts { get; private set; }
 
         public ScatteringParametersMatrix(int numPorts)
         {
             int m_size = numPorts * numPorts;
             NumPorts = numPorts;
-            _sMatrix = new Dictionary<(int destPort, int sourcePort), ScatteringParameter>(numPorts);
+            _sMatrix = new Dictionary<(int destPort, int sourcePort), ScatteringParameter>(m_size);
+        }
+        public ScatteringParametersMatrix(IList<ScatteringParameter> flattendList)
+        {
+            CreateFromFlattenedList(flattendList, ListFormat.SourcePortMajor);
+        }
+        public ScatteringParametersMatrix(IList<ScatteringParameter> flattenedList, ListFormat format)
+        {
+            CreateFromFlattenedList(flattenedList, format);
+        }
+
+        private void CreateFromFlattenedList(IList<ScatteringParameter> flattenedList, ListFormat format)
+        {
+            if (flattenedList == null) throw new ArgumentNullException(nameof(flattenedList));
+
+            bool IsPerfectSquare(int input)
+            {
+                var sqrt = Math.Sqrt(input);
+                return sqrt % 1 == 0;
+            }
+
+            if (!IsPerfectSquare(flattenedList.Count)) throw new ArgumentOutOfRangeException(nameof(flattenedList),
+                "List must contain (num-ports) squared elements.");
+
+            int ports = (int)Math.Sqrt(flattenedList.Count);
+
+            NumPorts = ports;
+            _sMatrix = new Dictionary<(int destPort, int sourcePort), ScatteringParameter>();
+
+            using (var enumer = flattenedList.GetEnumerator())
+            {
+                for (int i = 1; i <= NumPorts; i++)
+                {
+                    for (int j = 1; j <= NumPorts; j++)
+                    {
+                        enumer.MoveNext();
+                        ScatteringParameter s = enumer.Current;
+
+                        if (format == ListFormat.SourcePortMajor)
+                        {
+                            _sMatrix[(i, j)] = s;
+                        }
+                        else _sMatrix[(j, i)] = s;
+                    }
+                }
+            }
         }
 
         public ScatteringParameter this[int destinationPort, int sourcePort]

@@ -42,6 +42,7 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ParserTests.cs" />
     <Compile Include="ScatteringParametersMatrixTests.cs" />
     <Compile Include="ScatteringParameterTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

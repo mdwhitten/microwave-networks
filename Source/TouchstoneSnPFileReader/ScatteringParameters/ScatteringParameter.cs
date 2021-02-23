@@ -40,7 +40,7 @@ namespace TouchstoneSnPFileReader.ScatteringParameters
         public static implicit operator ScatteringParameter(Complex c) => new Complex(c.Real, c.Imaginary);
         #endregion
         #region Overrides
-        public override string ToString() => $"{{{Magnitude_dB:g3} dB, {Angle_deg:g3} deg}}";
+        public override string ToString() => $"{Magnitude_dB:g3} dB, {Angle_deg:g3} deg";
         public override int GetHashCode() => ToString().GetHashCode();
         public override bool Equals(object obj)
         {
