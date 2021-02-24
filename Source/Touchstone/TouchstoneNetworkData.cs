@@ -1,15 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Reflection;
+
 using System.Threading.Tasks;
 using System.IO;
+using Touchstone.IO;
 
-namespace TouchstoneSnPFileReader
+namespace Touchstone
 {
     using ScatteringParameters;
+    using System.Threading;
+
     internal sealed class TouchstoneParameterAttribute : Attribute
     {
         public string FieldName { get; }
@@ -83,7 +83,7 @@ namespace TouchstoneSnPFileReader
         Lower,
         Upper
     }
-    public class TouchstoneFileOptions
+    public class TouchstoneOptions
     {
         public FrequencyUnit FrequencyUnit = FrequencyUnit.GHz;
         public ParameterType Parameter = ParameterType.Scattering;
@@ -91,7 +91,7 @@ namespace TouchstoneSnPFileReader
         [TouchstoneParameter("R")]
         public float Resistance = 50;
     }
-    public class TouchstoneFileKeywords
+    public class TouchstoneKeywords
     {
         [TouchstoneParameter("Version")]
         public FileVersion? Version;
@@ -108,36 +108,63 @@ namespace TouchstoneSnPFileReader
         [TouchstoneParameter("Matrix Format")]
         public MatrixFormat? MatrixFormat;
     }
-    public class TouchstoneFile
+    public class TouchstoneNetworkData
     {
-
-
-        public TouchstoneFileOptions Options { get; set; } = new TouchstoneFileOptions();
-        public TouchstoneFileKeywords Keywords { get; set; } = new TouchstoneFileKeywords();
+        public TouchstoneOptions Options { get; set; } = new TouchstoneOptions();
+        public TouchstoneKeywords Keywords { get; set; } = new TouchstoneKeywords();
 
         public ScatteringParametersCollection ScatteringParameters { get; set; }
 
-        internal TouchstoneFile() { }
-        public TouchstoneFile(int numPorts, TouchstoneFileOptions opts)
+        internal TouchstoneNetworkData() { }
+        public TouchstoneNetworkData(int numPorts, TouchstoneOptions opts)
         {
             ScatteringParameters = new ScatteringParametersCollection(numPorts);
         }
 
-        public static async Task<TouchstoneFile> FromFileAsync(string filePath)
+        private TouchstoneNetworkData(TouchstoneReader reader, CancellationToken token = default)
+        {
+            Options = reader.Options;
+            Keywords = reader.Keywords;
+            
+
+            foreach (var (frequency, matrix) in reader)
+            {
+                if (ScatteringParameters == null)
+                {
+                    ScatteringParameters = new ScatteringParametersCollection(matrix.NumPorts);
+                }
+                ScatteringParameters.Add(frequency, matrix);
+                token.ThrowIfCancellationRequested();
+            }
+
+            // If no version is set that makes this version 1.0
+            Keywords.Version = Keywords.Version ?? FileVersion.One;
+        }
+
+        /*public static async Task<Touchstone> FromFileAsync(string filePath, TouchstoneReaderSettings settings)
         {
             if (filePath == null) throw new ArgumentNullException(nameof(filePath));
             if (!File.Exists(filePath)) throw new FileNotFoundException("File not found", filePath);
 
-            using (StreamReader s = new StreamReader(filePath))
+            using (TouchstoneReader reader = TouchstoneReader.CreateWithFile(filePath, settings))
             {
                 TouchstoneParser parser = new TouchstoneParser(s);
                 return await parser.ParseAsync();
             }
+        }*/
+
+        public static TouchstoneNetworkData FromFile(string filePath, TouchstoneReaderSettings settings)
+        {
+            if (filePath == null) throw new ArgumentNullException(nameof(filePath));
+            if (!File.Exists(filePath)) throw new FileNotFoundException("File not found", filePath);
+
+            using (TouchstoneReader reader = TouchstoneReader.CreateWithFile(filePath, settings))
+            {
+                return new TouchstoneNetworkData(reader);
+            }
         }
 
-        public static TouchstoneFile FromFile(string filePath) => FromFileAsync(filePath).Result;
-
-        public static async Task<TouchstoneFile> FromTextAsync(string fileText)
+        /*public static async Task<Touchstone> FromTextAsync(string fileText)
         {
             if (fileText == null) throw new ArgumentNullException(nameof(fileText));
 
@@ -146,8 +173,16 @@ namespace TouchstoneSnPFileReader
                 TouchstoneParser parser = new TouchstoneParser(s);
                 return await parser.ParseAsync();
             }
-        }
+        }*/
 
-        public static TouchstoneFile FromText(string fileText) => FromTextAsync(fileText).Result;
+        public static TouchstoneNetworkData FromString(string fileText, TouchstoneReaderSettings settings)
+        {
+            if (fileText == null) throw new ArgumentNullException(nameof(fileText));
+
+            using (TouchstoneReader reader = TouchstoneReader.CreateWithString(fileText, settings))
+            {
+                return new TouchstoneNetworkData(reader);
+            }
+        }
     }
 }

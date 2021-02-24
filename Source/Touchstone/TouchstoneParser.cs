@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Text.RegularExpressions;
 
-namespace TouchstoneSnPFileReader
+namespace Touchstone
 {
     using ScatteringParameters;
 
@@ -49,27 +49,27 @@ namespace TouchstoneSnPFileReader
         private const char OptionChar = '#';
         private const char KeywordChar = '[';
 
-        private static FieldLookup<TouchstoneFileKeywords> keywordLookup = new FieldLookup<TouchstoneFileKeywords>();
+        private static FieldLookup<TouchstoneKeywords> keywordLookup = new FieldLookup<TouchstoneKeywords>();
         private static FieldLookup<FrequencyUnit> frequencyUnitLookup = new FieldLookup<FrequencyUnit>();
         private static FieldLookup<ParameterType> parameterTypeLookup = new FieldLookup<ParameterType>();
         private static FieldLookup<FormatType> formatTypeLookup = new FieldLookup<FormatType>();
         private static Lazy<string> resistanceSignifier = new Lazy<string>(() =>
         {
-            FieldInfo f = typeof(TouchstoneFileOptions).GetField(nameof(TouchstoneFileOptions.Resistance));
+            FieldInfo f = typeof(TouchstoneOptions).GetField(nameof(TouchstoneOptions.Resistance));
             var attr = f.GetCustomAttribute<TouchstoneParameterAttribute>();
             return attr.FieldName;
         });
 
 
         private TextReader reader;
-        private TouchstoneFile file;
+        private TouchstoneNetworkData file;
         private int lineNumber;
 
         public TouchstoneParser(TextReader reader)
         {
             if (reader == null) throw new ArgumentNullException(nameof(reader));
             this.reader = reader;
-            file = new TouchstoneFile();
+            file = new TouchstoneNetworkData();
         }
         private void ThrowHelper(string sectionName, string extraMessage = null, Exception inner = null)
         {
@@ -81,8 +81,8 @@ namespace TouchstoneSnPFileReader
             }
             else throw new InvalidDataException(message, inner);
         }
-        public async Task<TouchstoneFile> ParseAsync() => await ParseAsync(CancellationToken.None);
-        public async Task<TouchstoneFile> ParseAsync(CancellationToken cancelToken)
+        public async Task<TouchstoneNetworkData> ParseAsync() => await ParseAsync(CancellationToken.None);
+        public async Task<TouchstoneNetworkData> ParseAsync(CancellationToken cancelToken)
         {
             string line;
             bool optionsParsed = false;
@@ -119,7 +119,7 @@ namespace TouchstoneSnPFileReader
 
             return file;
         }
-        public TouchstoneFile Parse() => ParseAsync().Result;
+        public TouchstoneNetworkData Parse() => ParseAsync().Result;
         private async Task ParseData(string line, CancellationToken cancelToken)
         {
             line = line.TrimStart();
@@ -190,7 +190,7 @@ namespace TouchstoneSnPFileReader
                 bool found = keywordLookup.Value.TryGetValue(keywordName, out string fieldName);
                 if (!found) ThrowHelper("Keywords", "Unknown keyword");
 
-                FieldInfo field = typeof(TouchstoneFileKeywords).GetField(fieldName);
+                FieldInfo field = typeof(TouchstoneKeywords).GetField(fieldName);
                 object convertedValue = null;
                 try
                 {

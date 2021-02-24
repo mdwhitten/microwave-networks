@@ -2,7 +2,7 @@
 using static System.Math;
 using System.Numerics;
 
-namespace TouchstoneSnPFileReader.ScatteringParameters
+namespace Touchstone.ScatteringParameters
 {
     /// <summary>
     /// Represents a single scattering parameter (S-parameter) for a given frequency, source port, and destination port.

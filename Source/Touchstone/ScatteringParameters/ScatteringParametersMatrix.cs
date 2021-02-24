@@ -3,8 +3,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Numerics;
+using Touchstone.Internal;
 
-namespace TouchstoneSnPFileReader.ScatteringParameters
+namespace Touchstone.ScatteringParameters
 {
     public readonly struct PortScatteringParameterPair
     {
@@ -50,16 +51,8 @@ namespace TouchstoneSnPFileReader.ScatteringParameters
         {
             if (flattenedList == null) throw new ArgumentNullException(nameof(flattenedList));
 
-            bool IsPerfectSquare(int input)
-            {
-                var sqrt = Math.Sqrt(input);
-                return sqrt % 1 == 0;
-            }
-
-            if (!IsPerfectSquare(flattenedList.Count)) throw new ArgumentOutOfRangeException(nameof(flattenedList),
-                "List must contain (num-ports) squared elements.");
-
-            int ports = (int)Math.Sqrt(flattenedList.Count);
+            if (!flattenedList.Count.IsPerfectSquare(out int ports)) 
+                throw new ArgumentOutOfRangeException(nameof(flattenedList), "List must contain (num-ports) squared elements.");
 
             NumPorts = ports;
             _sMatrix = new Dictionary<(int destPort, int sourcePort), ScatteringParameter>();

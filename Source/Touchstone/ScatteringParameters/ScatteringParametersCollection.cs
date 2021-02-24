@@ -4,7 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 
-namespace TouchstoneSnPFileReader.ScatteringParameters
+namespace Touchstone.ScatteringParameters
 {
     public readonly struct FrequencyParametersPair
     {
@@ -128,7 +128,7 @@ namespace TouchstoneSnPFileReader.ScatteringParameters
             {
 
             }
-            TouchstoneFile file = new TouchstoneFile(2, null);
+            TouchstoneNetworkData file = new TouchstoneNetworkData(2, null);
 
             file.ScatteringParameters = new ScatteringParametersCollection(2)
             {
