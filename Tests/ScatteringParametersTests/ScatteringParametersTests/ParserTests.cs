@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using TouchstoneSnPFileReader;
+using Touchstone;
+using Touchstone.IO;
 using System.Linq;
 
 namespace ScatteringParametersTests
@@ -13,9 +14,14 @@ namespace ScatteringParametersTests
         {
             string filePath = @"C:\Users\mwhitten\Downloads\deembed\De-embed\15dB_Attenuator.s2p";
 
-            TouchstoneFile file = TouchstoneFile.FromFile(filePath);
+            TouchstoneReaderSettings settings = new TouchstoneReaderSettings
+            {
+                FrequencySelector = val => val > 4e9
+            };
 
-            var test = file.ScatteringParameters.Select(f => (f.Frequency_Hz, f.Parameters[2, 1]));
+            TouchstoneNetworkData data = TouchstoneNetworkData.FromFile(filePath, settings);
+            var stuff = data.ScatteringParameters.Select(d => (d.Frequency_Hz, d.Parameters[2, 1])).ToList();
+
         }
     }
 }
