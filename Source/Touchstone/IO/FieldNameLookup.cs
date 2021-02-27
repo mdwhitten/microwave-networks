@@ -4,13 +4,13 @@ using System.Reflection;
 
 namespace Touchstone.IO
 {
-    internal class FieldLookup<T>
+    internal class FieldNameLookup<T>
     {
         private Lazy<Dictionary<string, string>> fieldLookup;
 
         public Dictionary<string, string> Value => fieldLookup.Value;
 
-        public FieldLookup()
+        public FieldNameLookup()
         {
             fieldLookup = new Lazy<Dictionary<string, string>>(() => CreateFieldLookup());
         }

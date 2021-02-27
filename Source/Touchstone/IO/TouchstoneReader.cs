@@ -23,14 +23,10 @@ namespace Touchstone.IO
         public IEnumerator<FrequencyParametersPair> GetEnumerator() => ParseData().GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        private const char CommentChar = '!';
-        private const char OptionChar = '#';
-        private const char KeywordChar = '[';
-
-        private static FieldLookup<TouchstoneKeywords> keywordLookup = new FieldLookup<TouchstoneKeywords>();
-        private static FieldLookup<FrequencyUnit> frequencyUnitLookup = new FieldLookup<FrequencyUnit>();
-        private static FieldLookup<ParameterType> parameterTypeLookup = new FieldLookup<ParameterType>();
-        private static FieldLookup<FormatType> formatTypeLookup = new FieldLookup<FormatType>();
+        private static FieldNameLookup<TouchstoneKeywords> keywordLookup = new FieldNameLookup<TouchstoneKeywords>();
+        private static FieldNameLookup<FrequencyUnit> frequencyUnitLookup = new FieldNameLookup<FrequencyUnit>();
+        private static FieldNameLookup<ParameterType> parameterTypeLookup = new FieldNameLookup<ParameterType>();
+        private static FieldNameLookup<FormatType> formatTypeLookup = new FieldNameLookup<FormatType>();
         private static Lazy<string> resistanceSignifier = new Lazy<string>(()
             => GetTouchstoneFieldName<TouchstoneOptions>(nameof(TouchstoneOptions.Resistance)));
         private static Lazy<string> referenceKeywordName = new Lazy<string>(()
@@ -48,7 +44,15 @@ namespace Touchstone.IO
             Options = new TouchstoneOptions();
             Keywords = new TouchstoneKeywords();
         }
-
+        private string StripTrailingComment(string line)
+        {
+            int index = line.IndexOf('!');
+            if (index >= 0)
+            {
+                return line.Substring(0, index);
+            }
+            else return line;
+        }
         #region Header Parsing
         protected void ParseToData(TextReader reader)
         {
@@ -58,7 +62,7 @@ namespace Touchstone.IO
 
             int nextCharInt;
             bool optionsParsed = false;
-            List<char> headerChars = new List<char> { CommentChar, OptionChar, KeywordChar };
+            List<char> headerChars = new List<char> { Constants.CommentChar, Constants.OptionChar, Constants.KeywordOpenChar };
 
             while ((nextCharInt = reader.Peek()) != -1 && headerChars.Contains((char)nextCharInt))
             {
@@ -68,17 +72,19 @@ namespace Touchstone.IO
 
                 switch (nextChar)
                 {
-                    case CommentChar:
+                    case Constants.CommentChar:
                         break;
-                    case OptionChar:
+                    case Constants.OptionChar:
                         // Format specifies that all subsequent option lines should be ignored after first
                         if (!optionsParsed)
                         {
+                            line = StripTrailingComment(line);
                             ParseOption(line);
                             optionsParsed = true;
                         }
                         break;
-                    case KeywordChar:
+                    case Constants.KeywordOpenChar:
+                        line = StripTrailingComment(line);
                         ParseKeyword(line);
                         break;
                 }
@@ -136,22 +142,20 @@ namespace Touchstone.IO
             {
                 while (enumer.MoveNext())
                 {
-                    string option = enumer.Current;
+                     string option = enumer.Current;
                     // Format specifies that options can occur in any order
-                    if (frequencyUnitLookup.Value.ContainsKey(option))
+                    if (TouchstoneEnumMap<FrequencyUnit>.ValidTouchstoneName(option))
                     {
-                        string frequencyUnitName = frequencyUnitLookup.Value[option];
-                        Options.FrequencyUnit = StringToEnum<FrequencyUnit>(frequencyUnitName);
+                        //string frequencyUnitName = frequencyUnitLookup.Value[option];
+                        Options.FrequencyUnit = TouchstoneEnumMap<FrequencyUnit>.FromTouchstoneValue(option);
                     }
-                    else if (formatTypeLookup.Value.ContainsKey(option))
+                    else if (TouchstoneEnumMap<FormatType>.ValidTouchstoneName(option))
                     {
-                        string formatTypeName = formatTypeLookup.Value[option];
-                        Options.Format = StringToEnum<FormatType>(formatTypeName);
+                        Options.Format = TouchstoneEnumMap<FormatType>.FromTouchstoneValue(option);
                     }
-                    else if (parameterTypeLookup.Value.ContainsKey(option))
+                    else if (TouchstoneEnumMap<ParameterType>.ValidTouchstoneName(option))
                     {
-                        string parameterTypeName = parameterTypeLookup.Value[option];
-                        Options.Parameter = StringToEnum<ParameterType>(parameterTypeName);
+                        Options.Parameter = TouchstoneEnumMap<ParameterType>.FromTouchstoneValue(option);
                     }
                     else if (option == resistanceSignifier.Value)
                     {
@@ -184,7 +188,7 @@ namespace Touchstone.IO
                     while ((line = await reader.ReadLineAsync()) != null)
                     {
                         line = line.Trim();
-                        if (line[0] == CommentChar) continue;
+                        if (line[0] == Constants.CommentChar) continue;
 
                         (bool matchedPredicate, FrequencyParametersPair pair) = ParseLine(line, token);
                         if (matchedPredicate)
@@ -201,7 +205,7 @@ namespace Touchstone.IO
             while ((line = reader.ReadLine()) != null)
             {
                 line = line.Trim();
-                if (line[0] == CommentChar) continue;
+                if (line[0] == Constants.CommentChar) continue;
 
                 (bool matchedPredicate, FrequencyParametersPair pair) = ParseLine(line);
                 if (matchedPredicate)
@@ -214,6 +218,10 @@ namespace Touchstone.IO
         {
             FrequencyParametersPair pair = default;
             bool matchedPredicate = false;
+
+            // Remove any trailing comments and any leading or trailing whitespace
+            line = StripTrailingComment(line);
+            line = line.Trim();
             
             string[] data = Regex.Split(line, @"\s");
 

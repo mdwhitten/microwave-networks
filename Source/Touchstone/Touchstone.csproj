@@ -45,11 +45,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Internal\Utilities.cs" />
-    <Compile Include="IO\FieldLookup.cs" />
+    <Compile Include="IO\Constants.cs" />
+    <Compile Include="IO\EnumLookup.cs" />
+    <Compile Include="IO\FieldNameLookup.cs" />
+    <Compile Include="IO\TouchstoneEnumMap.cs" />
+    <Compile Include="IO\TouchstoneFileWriter.cs" />
     <Compile Include="IO\TouchstoneStringReader.cs" />
     <Compile Include="IO\TouchstoneFileReader.cs" />
     <Compile Include="IO\TouchstoneReader.cs" />
     <Compile Include="IO\TouchstoneReaderSettings.cs" />
+    <Compile Include="IO\TouchstoneStringWriter.cs" />
+    <Compile Include="IO\TouchstoneWriter.cs" />
+    <Compile Include="IO\TouchstoneWriterSettings.cs" />
     <Compile Include="ScatteringParameters\ScatteringParametersCollection.cs" />
     <Compile Include="ScatteringParameters\ScatteringParameter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
