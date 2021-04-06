@@ -46,7 +46,7 @@ namespace Touchstone.IO
         }
         private string StripTrailingComment(string line)
         {
-            int index = line.IndexOf('!');
+            int index = line.IndexOf(Constants.CommentChar);
             if (index >= 0)
             {
                 return line.Substring(0, index);
@@ -235,6 +235,8 @@ namespace Touchstone.IO
 
             bool success = double.TryParse(data[0], out double frequency);
             if (!success) ThrowHelper("Data", "Invalid format for frequency");
+
+            frequency *= Options.FrequencyUnit.GetMultiplier();
 
             bool selectedFrequency = true;
             if (settings.FrequencySelector != null)

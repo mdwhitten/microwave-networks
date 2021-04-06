@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Touchstone;
+using System.IO;
 using Touchstone.IO;
 using System.Linq;
 
@@ -16,12 +17,23 @@ namespace ScatteringParametersTests
 
             TouchstoneReaderSettings settings = new TouchstoneReaderSettings
             {
-                FrequencySelector = val => val > 4e9
+                //FrequencySelector = val => val > 4e9
             };
 
             TouchstoneNetworkData data = TouchstoneNetworkData.FromFile(filePath, settings);
             var stuff = data.ScatteringParameters.Select(d => (d.Frequency_Hz, d.Parameters[2, 1])).ToList();
 
+            using (TouchstoneStringWriter writer = new TouchstoneStringWriter(new TouchstoneWriterSettings(),
+                data.Options))
+            {
+                writer.WriteHeader();
+
+                foreach (var val in data.ScatteringParameters) writer.WriteEntry(val);
+
+                string test = writer.ToString();
+            }
+            string tempPath = Path.GetTempFileName();
+            data.ToFile(tempPath, new TouchstoneWriterSettings());
         }
     }
 }

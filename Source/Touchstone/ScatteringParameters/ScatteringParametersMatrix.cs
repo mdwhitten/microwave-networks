@@ -20,6 +20,12 @@ namespace Touchstone.ScatteringParameters
 
         public static implicit operator PortScatteringParameterPair(KeyValuePair<(int, int), ScatteringParameter> pair)
             => new PortScatteringParameterPair(pair.Key, pair.Value);
+
+        public void Deconstruct(out (int DestinationPort, int SourcePort) index, out ScatteringParameter parameter)
+        {
+            index = Index;
+            parameter = ScatteringParameter;
+        }
     }
     public enum ListFormat
     {
@@ -51,7 +57,7 @@ namespace Touchstone.ScatteringParameters
         {
             if (flattenedList == null) throw new ArgumentNullException(nameof(flattenedList));
 
-            if (!flattenedList.Count.IsPerfectSquare(out int ports)) 
+            if (!flattenedList.Count.IsPerfectSquare(out int ports))
                 throw new ArgumentOutOfRangeException(nameof(flattenedList), "List must contain (num-ports) squared elements.");
 
             NumPorts = ports;
@@ -115,7 +121,8 @@ namespace Touchstone.ScatteringParameters
             }
         }
 
-        public IEnumerator<PortScatteringParameterPair> GetEnumerator()
+        public IEnumerator<PortScatteringParameterPair> GetEnumerator() => GetEnumerator(ListFormat.SourcePortMajor);
+        public IEnumerator<PortScatteringParameterPair> GetEnumerator(ListFormat format)
         {
             // Custom index the object instead of just returning the dictionary key/value pairs.
             // This handles the case when only one parameter (say, s21) has been set for the matrix.
@@ -126,7 +133,7 @@ namespace Touchstone.ScatteringParameters
             {
                 for (int j = 1; j <= NumPorts; j++)
                 {
-                    ScatteringParameter s = this[i, j];
+                    ScatteringParameter s = format == ListFormat.SourcePortMajor ? this[i, j] : this[j, i];
                     yield return new PortScatteringParameterPair((i, j), s);
                 }
             }

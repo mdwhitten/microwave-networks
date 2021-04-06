@@ -21,11 +21,21 @@ namespace Touchstone
     /// </summary>
     public enum FrequencyUnit
     {
-        Hz,
-        kHz,
-        MHz,
-        GHz
+        Hz = 1,
+        kHz = 3,
+        MHz = 6,
+        GHz = 9
     };
+    public static class FrequencyUnitUtilities
+    {
+        /// <summary>
+        /// Returns the multiplier that corresponds with a given frequency unit.
+        /// </summary>
+        /// <param name="unit"></param>
+        /// <returns></returns>
+        public static double GetMultiplier(this FrequencyUnit unit) => Math.Pow(10, (int)unit);
+    }
+
     /// <summary>
     /// Specifies what kind of network parameter data is contained in the file.
     /// </summary>
@@ -152,7 +162,33 @@ namespace Touchstone
                 return await parser.ParseAsync();
             }
         }*/
+        public override string ToString()
+        {
+            TouchstoneStringWriter stringWriter = new TouchstoneStringWriter(new TouchstoneWriterSettings(), Options);
 
+            foreach (var data in ScatteringParameters)
+            {
+                stringWriter.WriteEntry(data);
+            }
+            return stringWriter.ToString();
+        }
+        public void ToFile(string filePath, TouchstoneWriterSettings settings)
+        {
+            if (filePath == null) throw new ArgumentNullException(nameof(filePath));
+
+            using (TouchstoneFileWriter writer = new TouchstoneFileWriter(filePath, settings))
+            {
+                writer.Options = Options;
+                writer.Keywords = Keywords;
+
+                foreach(var pair in ScatteringParameters)
+                {
+                    writer.WriteEntry(pair);
+                }
+
+                writer.Flush();
+            };
+        }
         public static TouchstoneNetworkData FromFile(string filePath, TouchstoneReaderSettings settings)
         {
             if (filePath == null) throw new ArgumentNullException(nameof(filePath));

@@ -12,5 +12,6 @@ namespace Touchstone.IO
         public const char OptionChar = '#';
         public const char KeywordOpenChar = '[';
         public const char KeywordCloseChar = '[';
+        public const char ResistanceChar = 'R';
     }
 }

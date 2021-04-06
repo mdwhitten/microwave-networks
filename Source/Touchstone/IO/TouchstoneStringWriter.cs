@@ -7,8 +7,27 @@ using System.IO;
 
 namespace Touchstone.IO
 {
-    class TouchstoneStringWriter
+    public sealed class TouchstoneStringWriter : TouchstoneWriter
     {
-        
+
+        public TouchstoneStringWriter(TouchstoneWriterSettings settings, TouchstoneOptions options)
+            : base(settings, options)
+        {
+            StringWriter writer = new StringWriter();
+            Writer = writer;
+            //WriteHeader();
+        }
+        public TouchstoneStringWriter(TouchstoneWriterSettings settings)
+            : base(settings)
+        {
+            StringWriter writer = new StringWriter();
+            Writer = writer;
+            //WriteHeader();
+        }
+
+        public override string ToString()
+        {
+            return Writer.ToString();
+        }
     }
 }
