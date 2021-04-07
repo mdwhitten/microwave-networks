@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Touchstone.IO
+namespace MicrowaveNetworks.Touchstone.IO
 {
     public sealed class TouchstoneReaderSettings
     {

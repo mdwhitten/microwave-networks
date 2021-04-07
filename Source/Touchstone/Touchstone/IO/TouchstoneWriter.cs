@@ -4,13 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
-using Touchstone.ScatteringParameters;
 using System.Globalization;
 using static Touchstone.Internal.Utilities;
-using static Touchstone.IO.Constants;
+using static MicrowaveNetworks.Touchstone.IO.Constants;
 using System.Text.RegularExpressions;
 
-namespace Touchstone.IO
+namespace MicrowaveNetworks.Touchstone.IO
 {
     public abstract class TouchstoneWriter : IDisposable
     {
@@ -102,7 +101,7 @@ namespace Touchstone.IO
             return string.Join("\t", columns);
         }
 
-        private string FormatEntry(double frequency, ScatteringParametersMatrix matrix)
+        private string FormatEntry(double frequency, NetworkParametersMatrix matrix)
         {
             //StringBuilder builder = new StringBuilder();
             string formatString = settings.NumericFormatString;
@@ -125,11 +124,11 @@ namespace Touchstone.IO
                 {
                     case FormatType.DecibelAngle:
                         numbersToFormat.Add(parameter.Magnitude_dB);
-                        numbersToFormat.Add(parameter.Angle_deg);
+                        numbersToFormat.Add(parameter.Phase_deg);
                         break;
                     case FormatType.MagnitudeAngle:
                         numbersToFormat.Add(parameter.Magnitude);
-                        numbersToFormat.Add(parameter.Angle_deg);
+                        numbersToFormat.Add(parameter.Phase_deg);
                         break;
                     case FormatType.RealImaginary:
                         numbersToFormat.Add(parameter.Real);
@@ -172,7 +171,7 @@ namespace Touchstone.IO
         {
             throw new NotImplementedException();
         }
-        public void WriteEntry(double frequency, ScatteringParametersMatrix matrix)
+        public void WriteEntry(double frequency, NetworkParametersMatrix matrix)
         {
             if (!headerWritten) WriteHeader();
             if (settings.IncludeColumnNames && !columnsWritten)
@@ -185,7 +184,7 @@ namespace Touchstone.IO
             Writer.WriteLine(line);
         }
         public void WriteEntry(FrequencyParametersPair pair) => WriteEntry(pair.Frequency_Hz, pair.Parameters);
-        public async Task WriteEntryAsync(double frequency, ScatteringParametersMatrix matrix)
+        public async Task WriteEntryAsync(double frequency, NetworkParametersMatrix matrix)
         {
             if (!headerWritten) await WriteHeaderAsync();
             if (settings.IncludeColumnNames && !columnsWritten)

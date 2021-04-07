@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace Touchstone.IO
+namespace MicrowaveNetworks.Touchstone.IO
 {
     /// <summary>
     /// Simple helper class to map between the text values from the Touchstone file and the enum values defined by reading the

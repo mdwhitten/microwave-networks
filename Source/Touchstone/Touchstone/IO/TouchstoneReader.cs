@@ -7,13 +7,12 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Reflection;
 
-using Touchstone.ScatteringParameters;
 using System.Threading;
 using System.Runtime.CompilerServices;
 using Touchstone.Internal;
 using System.Collections;
 
-namespace Touchstone.IO
+namespace MicrowaveNetworks.Touchstone.IO
 {
     public abstract class TouchstoneReader : IDisposable, IEnumerable<FrequencyParametersPair>
     {
@@ -255,7 +254,7 @@ namespace Touchstone.IO
             {
                 matchedPredicate = true;
 
-                List<ScatteringParameter> parameters = new List<ScatteringParameter>();
+                List<NetworkParameter> parameters = new List<NetworkParameter>();
 
                 cancelToken.ThrowIfCancellationRequested();
 
@@ -274,20 +273,20 @@ namespace Touchstone.IO
                     {
                         ThrowHelper("Data", "Invalid data format");
                     }
-                    ScatteringParameter s = new ScatteringParameter();
+                    NetworkParameter param = new NetworkParameter();
                     switch (Options.Format)
                     {
                         case FormatType.DecibelAngle:
-                            s = ScatteringParameter.FromMagnitudeDecibelAngle(val1, val2);
+                            param = NetworkParameter.FromPolarDecibelDegree(val1, val2);
                             break;
                         case FormatType.MagnitudeAngle:
-                            s = ScatteringParameter.FromMagnitudeAngle(val1, val2);
+                            param = NetworkParameter.FromPolarDegree(val1, val2);
                             break;
                         case FormatType.RealImaginary:
-                            s = new ScatteringParameter(val1, val2);
+                            param = new NetworkParameter(val1, val2);
                             break;
                     }
-                    parameters.Add(s);
+                    parameters.Add(param);
                 }
 
                 ListFormat format = ListFormat.SourcePortMajor;
@@ -299,7 +298,7 @@ namespace Touchstone.IO
 
                 cancelToken.ThrowIfCancellationRequested();
 
-                ScatteringParametersMatrix matrix = new ScatteringParametersMatrix(parameters, format);
+                NetworkParametersMatrix matrix = new NetworkParametersMatrix(parameters, format);
 
                 pair = new FrequencyParametersPair(frequency, matrix);
             }

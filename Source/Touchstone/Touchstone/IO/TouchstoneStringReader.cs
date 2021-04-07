@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Touchstone.IO
+namespace MicrowaveNetworks.Touchstone.IO
 {
     public class TouchstoneStringReader : TouchstoneReader 
     {

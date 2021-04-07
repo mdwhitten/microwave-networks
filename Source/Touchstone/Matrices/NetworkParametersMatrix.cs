@@ -5,26 +5,26 @@ using System.Text;
 using System.Numerics;
 using Touchstone.Internal;
 
-namespace Touchstone.ScatteringParameters
+namespace MicrowaveNetworks
 {
-    public readonly struct PortScatteringParameterPair
+    public readonly struct PortNetworkParameterPair
     {
         public (int DestinationPort, int SourcePort) Index { get; }
-        public ScatteringParameter ScatteringParameter { get; }
+        public NetworkParameter NetworkParameter { get; }
 
-        public PortScatteringParameterPair((int destPort, int sourcePort) index, ScatteringParameter s)
+        public PortNetworkParameterPair((int destPort, int sourcePort) index, NetworkParameter parameter)
         {
             Index = index;
-            ScatteringParameter = s;
+            NetworkParameter = parameter;
         }
 
-        public static implicit operator PortScatteringParameterPair(KeyValuePair<(int, int), ScatteringParameter> pair)
-            => new PortScatteringParameterPair(pair.Key, pair.Value);
+        public static implicit operator PortNetworkParameterPair(KeyValuePair<(int, int), NetworkParameter> pair)
+            => new PortNetworkParameterPair(pair.Key, pair.Value);
 
-        public void Deconstruct(out (int DestinationPort, int SourcePort) index, out ScatteringParameter parameter)
+        public void Deconstruct(out (int DestinationPort, int SourcePort) index, out NetworkParameter parameter)
         {
             index = Index;
-            parameter = ScatteringParameter;
+            parameter = NetworkParameter;
         }
     }
     public enum ListFormat
@@ -32,28 +32,28 @@ namespace Touchstone.ScatteringParameters
         SourcePortMajor,
         DestinationPortMajor
     }
-    public class ScatteringParametersMatrix : IEnumerable<PortScatteringParameterPair>
+    public class NetworkParametersMatrix : IEnumerable<PortNetworkParameterPair>
     {
-        private Dictionary<(int destPort, int sourcePort), ScatteringParameter> _sMatrix;
+        private Dictionary<(int destPort, int sourcePort), NetworkParameter> parametersMatrix;
 
         public int NumPorts { get; private set; }
 
-        public ScatteringParametersMatrix(int numPorts)
+        public NetworkParametersMatrix(int numPorts)
         {
             int m_size = numPorts * numPorts;
             NumPorts = numPorts;
-            _sMatrix = new Dictionary<(int destPort, int sourcePort), ScatteringParameter>(m_size);
+            parametersMatrix = new Dictionary<(int destPort, int sourcePort), NetworkParameter>(m_size);
         }
-        public ScatteringParametersMatrix(IList<ScatteringParameter> flattendList)
+        public NetworkParametersMatrix(IList<NetworkParameter> flattendList)
         {
             CreateFromFlattenedList(flattendList, ListFormat.SourcePortMajor);
         }
-        public ScatteringParametersMatrix(IList<ScatteringParameter> flattenedList, ListFormat format)
+        public NetworkParametersMatrix(IList<NetworkParameter> flattenedList, ListFormat format)
         {
             CreateFromFlattenedList(flattenedList, format);
         }
 
-        private void CreateFromFlattenedList(IList<ScatteringParameter> flattenedList, ListFormat format)
+        private void CreateFromFlattenedList(IList<NetworkParameter> flattenedList, ListFormat format)
         {
             if (flattenedList == null) throw new ArgumentNullException(nameof(flattenedList));
 
@@ -61,7 +61,7 @@ namespace Touchstone.ScatteringParameters
                 throw new ArgumentOutOfRangeException(nameof(flattenedList), "List must contain (num-ports) squared elements.");
 
             NumPorts = ports;
-            _sMatrix = new Dictionary<(int destPort, int sourcePort), ScatteringParameter>();
+            parametersMatrix = new Dictionary<(int destPort, int sourcePort), NetworkParameter>();
 
             using (var enumer = flattenedList.GetEnumerator())
             {
@@ -70,33 +70,33 @@ namespace Touchstone.ScatteringParameters
                     for (int j = 1; j <= NumPorts; j++)
                     {
                         enumer.MoveNext();
-                        ScatteringParameter s = enumer.Current;
+                        NetworkParameter s = enumer.Current;
 
                         if (format == ListFormat.SourcePortMajor)
                         {
-                            _sMatrix[(i, j)] = s;
+                            parametersMatrix[(i, j)] = s;
                         }
-                        else _sMatrix[(j, i)] = s;
+                        else parametersMatrix[(j, i)] = s;
                     }
                 }
             }
         }
 
-        public ScatteringParameter this[int destinationPort, int sourcePort]
+        public NetworkParameter this[int destinationPort, int sourcePort]
         {
             get
             {
                 ValidateIndicies(destinationPort, sourcePort);
-                bool exists = _sMatrix.TryGetValue((destinationPort, sourcePort), out ScatteringParameter s);
+                bool exists = parametersMatrix.TryGetValue((destinationPort, sourcePort), out NetworkParameter s);
                 if (exists) return s;
                 // Rather than filling the whole matrix with the unity parameter, simply return unity whenever the value for the requested
                 // port has not been set.
-                else return ScatteringParameter.Unity;
+                else return NetworkParameter.One;
             }
             set
             {
                 ValidateIndicies(destinationPort, sourcePort);
-                _sMatrix[(destinationPort, sourcePort)] = value;
+                parametersMatrix[(destinationPort, sourcePort)] = value;
             }
         }
 
@@ -121,8 +121,8 @@ namespace Touchstone.ScatteringParameters
             }
         }
 
-        public IEnumerator<PortScatteringParameterPair> GetEnumerator() => GetEnumerator(ListFormat.SourcePortMajor);
-        public IEnumerator<PortScatteringParameterPair> GetEnumerator(ListFormat format)
+        public IEnumerator<PortNetworkParameterPair> GetEnumerator() => GetEnumerator(ListFormat.SourcePortMajor);
+        public IEnumerator<PortNetworkParameterPair> GetEnumerator(ListFormat format)
         {
             // Custom index the object instead of just returning the dictionary key/value pairs.
             // This handles the case when only one parameter (say, s21) has been set for the matrix.
@@ -133,8 +133,8 @@ namespace Touchstone.ScatteringParameters
             {
                 for (int j = 1; j <= NumPorts; j++)
                 {
-                    ScatteringParameter s = format == ListFormat.SourcePortMajor ? this[i, j] : this[j, i];
-                    yield return new PortScatteringParameterPair((i, j), s);
+                    NetworkParameter s = format == ListFormat.SourcePortMajor ? this[i, j] : this[j, i];
+                    yield return new PortNetworkParameterPair((i, j), s);
                 }
             }
         }
@@ -159,7 +159,7 @@ namespace Touchstone.ScatteringParameters
             foreach (var parameters in this)
             {
                 (int dest, int source) = parameters.Index;
-                sb.AppendLine($"[{dest}, {source}] = {parameters.ScatteringParameter}");
+                sb.AppendLine($"[{dest}, {source}] = {parameters.NetworkParameter}");
             }*/
             return sb.ToString();
         }

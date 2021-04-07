@@ -1,15 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-
-using System.Threading.Tasks;
+using System.Threading;
 using System.IO;
-using Touchstone.IO;
+using MicrowaveNetworks.Touchstone.IO;
 
-namespace Touchstone
+namespace MicrowaveNetworks.Touchstone
 {
-    using ScatteringParameters;
-    using System.Threading;
-
     internal sealed class TouchstoneParameterAttribute : Attribute
     {
         public string FieldName { get; }
@@ -123,27 +119,27 @@ namespace Touchstone
         public TouchstoneOptions Options { get; set; } = new TouchstoneOptions();
         public TouchstoneKeywords Keywords { get; set; } = new TouchstoneKeywords();
 
-        public ScatteringParametersCollection ScatteringParameters { get; set; }
+        public NetworkParametersCollection NetworkParameters { get; set; }
 
         internal TouchstoneNetworkData() { }
         public TouchstoneNetworkData(int numPorts, TouchstoneOptions opts)
         {
-            ScatteringParameters = new ScatteringParametersCollection(numPorts);
+            NetworkParameters = new NetworkParametersCollection(numPorts);
         }
 
         private TouchstoneNetworkData(TouchstoneReader reader, CancellationToken token = default)
         {
             Options = reader.Options;
             Keywords = reader.Keywords;
-            
+
 
             foreach (var (frequency, matrix) in reader)
             {
-                if (ScatteringParameters == null)
+                if (NetworkParameters == null)
                 {
-                    ScatteringParameters = new ScatteringParametersCollection(matrix.NumPorts);
+                    NetworkParameters = new NetworkParametersCollection(matrix.NumPorts);
                 }
-                ScatteringParameters.Add(frequency, matrix);
+                NetworkParameters.Add(frequency, matrix);
                 token.ThrowIfCancellationRequested();
             }
 
@@ -166,7 +162,7 @@ namespace Touchstone
         {
             TouchstoneStringWriter stringWriter = new TouchstoneStringWriter(new TouchstoneWriterSettings(), Options);
 
-            foreach (var data in ScatteringParameters)
+            foreach (var data in NetworkParameters)
             {
                 stringWriter.WriteEntry(data);
             }
@@ -181,7 +177,7 @@ namespace Touchstone
                 writer.Options = Options;
                 writer.Keywords = Keywords;
 
-                foreach(var pair in ScatteringParameters)
+                foreach (var pair in NetworkParameters)
                 {
                     writer.WriteEntry(pair);
                 }
