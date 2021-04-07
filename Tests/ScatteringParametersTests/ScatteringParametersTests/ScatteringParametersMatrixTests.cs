@@ -1,6 +1,6 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using TouchstoneSnPFileReader.ScatteringParameters;
+using Touchstone.ScatteringParameters;
 using FluentAssertions;
 
 namespace ScatteringParametersTests
