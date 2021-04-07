@@ -1,8 +1,8 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Touchstone;
 using System.IO;
-using Touchstone.IO;
+using MicrowaveNetworks.Touchstone;
+using MicrowaveNetworks.Touchstone.IO;
 using System.Linq;
 
 namespace ScatteringParametersTests
@@ -21,14 +21,14 @@ namespace ScatteringParametersTests
             };
 
             TouchstoneNetworkData data = TouchstoneNetworkData.FromFile(filePath, settings);
-            var stuff = data.ScatteringParameters.Select(d => (d.Frequency_Hz, d.Parameters[2, 1])).ToList();
+            var stuff = data.NetworkParameters.Select(d => (d.Frequency_Hz, d.Parameters[2, 1])).ToList();
 
             using (TouchstoneStringWriter writer = new TouchstoneStringWriter(new TouchstoneWriterSettings(),
                 data.Options))
             {
                 writer.WriteHeader();
 
-                foreach (var val in data.ScatteringParameters) writer.WriteEntry(val);
+                foreach (var val in data.NetworkParameters) writer.WriteEntry(val);
 
                 string test = writer.ToString();
             }

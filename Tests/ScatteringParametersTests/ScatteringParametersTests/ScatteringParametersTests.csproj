@@ -60,9 +60,9 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Source\Touchstone\Touchstone.csproj">
+    <ProjectReference Include="..\..\..\Source\Touchstone\MicrowaveNetworks.csproj">
       <Project>{fb684e96-e3ba-46f4-9a55-ea8a5eb2c76c}</Project>
-      <Name>Touchstone</Name>
+      <Name>MicrowaveNetworks</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />

@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Touchstone.ScatteringParameters;
+using MicrowaveNetworks;
+using MicrowaveNetworks.Matrices;
 using FluentAssertions;
 
 namespace ScatteringParametersTests
@@ -13,13 +14,13 @@ namespace ScatteringParametersTests
         {
             ScatteringParametersMatrix sm = new ScatteringParametersMatrix(2)
             {
-                [2, 1] = ScatteringParameter.FromMagnitudeDecibelAngle(10, 0)
+                [2, 1] = NetworkParameter.FromPolarDecibelDegree(10, 0)
             };
 
 
-            sm[1, 1].Should().Be(ScatteringParameter.Unity);
-            sm[1, 2].Should().Be(ScatteringParameter.Unity);
-            sm[2, 2].Should().Be(ScatteringParameter.Unity);
+            sm[1, 1].Should().Be(NetworkParameter.One);
+            sm[1, 2].Should().Be(NetworkParameter.One);
+            sm[2, 2].Should().Be(NetworkParameter.One);
         }
         [TestMethod]
         public void RangeTest()

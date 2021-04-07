@@ -1,53 +1,53 @@
 ﻿using System;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Touchstone.ScatteringParameters;
+using MicrowaveNetworks;
 using FluentAssertions;
 
-namespace ScatteringParametersTests
+namespace NetworkParametersTests
 {
     [TestClass]
-    public class ScatteringParameterTests
+    public class NetworkParameterTests
     {
         [TestMethod]
-        public void UnityTest()
+        public void OneTest()
         {
-            ScatteringParameter.Unity.Magnitude_dB.Should().Be(0);
-            ScatteringParameter.Unity.Angle_deg.Should().Be(0);
+            NetworkParameter.One.Magnitude_dB.Should().Be(0);
+            NetworkParameter.One.Phase_deg.Should().Be(0);
         }
         [TestMethod]
         public void ConversionTests()
         {
-            ScatteringParameter s = ScatteringParameter.FromMagnitudeAngle(100, 180);
+            NetworkParameter s = NetworkParameter.FromPolarDegree(100, 180);
             s.Magnitude_dB.Should().Be(20);
-            s.Angle_deg.Should().Be(180);
+            s.Phase_deg.Should().Be(180);
 
-            ScatteringParameter s2 = ScatteringParameter.FromMagnitudeDecibelAngle(20, 180);
+            NetworkParameter s2 = NetworkParameter.FromPolarDecibelDegree(20, 180);
             s2.Magnitude.Should().Be(100);
-            s.Angle_deg.Should().Be(180);
+            s.Phase_deg.Should().Be(180);
 
-            ScatteringParameter s3 = new ScatteringParameter(10, 10);
-            s3.Angle_deg.Should().Be(45);
+            NetworkParameter s3 = new NetworkParameter(10, 10);
+            s3.Phase_deg.Should().Be(45);
 
-            ScatteringParameter s4 = new ScatteringParameter(10, -10);
-            s4.Angle_deg.Should().Be(-45);
+            NetworkParameter s4 = new NetworkParameter(10, -10);
+            s4.Phase_deg.Should().Be(-45);
 
-            ScatteringParameter s5 = ScatteringParameter.FromMagnitudeAngle(100 * Math.Sqrt(2), 45);
+            NetworkParameter s5 = NetworkParameter.FromPolarDegree(100 * Math.Sqrt(2), 45);
             s5.Real.Should().BeApproximately(100, .001);
             s5.Imaginary.Should().BeApproximately(100, .001);
         }
         [TestMethod]
         public void ComparisonTests()
         {
-            ScatteringParameter s = ScatteringParameter.FromMagnitudeDecibelAngle(20, 0);
-            ScatteringParameter s2 = ScatteringParameter.FromMagnitudeDecibelAngle(10, 180);
+            NetworkParameter s = NetworkParameter.FromPolarDecibelDegree(20, 0);
+            NetworkParameter s2 = NetworkParameter.FromPolarDecibelDegree(10, 180);
 
-            (s > s2).Should().BeTrue("magnitude is prioritized");
+            //(s > s2).Should().BeTrue("magnitude is prioritized");
 
-            ScatteringParameter s_0 = ScatteringParameter.FromMagnitudeDecibelAngle(20, 10);
-            (s < s_0).Should().BeTrue("greater angle");
+            NetworkParameter s_0 = NetworkParameter.FromPolarDecibelDegree(20, 10);
+            //(s < s_0).Should().BeTrue("greater angle");
 
-            ScatteringParameter s3 = ScatteringParameter.FromMagnitudeDecibelAngle(20, 100);
-            ScatteringParameter s4 = ScatteringParameter.FromMagnitudeAngle(100, 100);
+            NetworkParameter s3 = NetworkParameter.FromPolarDecibelDegree(20, 100);
+            NetworkParameter s4 = NetworkParameter.FromPolarDegree(100, 100);
             (s3 == s4).Should().BeTrue();
         }
     }

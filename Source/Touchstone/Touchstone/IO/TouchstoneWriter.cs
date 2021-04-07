@@ -8,6 +8,7 @@ using System.Globalization;
 using static Touchstone.Internal.Utilities;
 using static MicrowaveNetworks.Touchstone.IO.Constants;
 using System.Text.RegularExpressions;
+using MicrowaveNetworks.Matrices;
 
 namespace MicrowaveNetworks.Touchstone.IO
 {

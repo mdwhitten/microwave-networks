@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.29728.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ScatteringParametersTests", "ScatteringParametersTests\ScatteringParametersTests.csproj", "{0C09DBC7-74E3-4D1A-8600-397AC2B94C10}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Touchstone", "..\..\Source\Touchstone\Touchstone.csproj", "{FB684E96-E3BA-46F4-9A55-EA8A5EB2C76C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Touchstone", "..\..\Source\Touchstone\MicrowaveNetworks.csproj", "{FB684E96-E3BA-46F4-9A55-EA8A5EB2C76C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

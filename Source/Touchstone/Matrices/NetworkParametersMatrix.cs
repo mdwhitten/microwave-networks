@@ -4,8 +4,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Numerics;
 using Touchstone.Internal;
+using MathNet.Numerics.LinearAlgebra.Complex;
 
-namespace MicrowaveNetworks
+namespace MicrowaveNetworks.Matrices
 {
     public readonly struct PortNetworkParameterPair
     {
@@ -32,17 +33,24 @@ namespace MicrowaveNetworks
         SourcePortMajor,
         DestinationPortMajor
     }
-    public class NetworkParametersMatrix : IEnumerable<PortNetworkParameterPair>
+    public  class NetworkParametersMatrix : IEnumerable<PortNetworkParameterPair>
     {
-        private Dictionary<(int destPort, int sourcePort), NetworkParameter> parametersMatrix;
+        //private Dictionary<(int destPort, int sourcePort), NetworkParameter> parametersMatrix;
+
+        protected DenseMatrix matrix;
 
         public int NumPorts { get; private set; }
 
+        protected NetworkParametersMatrix(int numPorts, DenseMatrix matrix)
+        {
+            NumPorts = numPorts;
+            this.matrix = matrix;
+        }
         public NetworkParametersMatrix(int numPorts)
         {
-            int m_size = numPorts * numPorts;
             NumPorts = numPorts;
-            parametersMatrix = new Dictionary<(int destPort, int sourcePort), NetworkParameter>(m_size);
+            //parametersMatrix = new Dictionary<(int destPort, int sourcePort), NetworkParameter>(m_size);
+            matrix = DenseMatrix.Create(numPorts, numPorts, Complex.Zero);
         }
         public NetworkParametersMatrix(IList<NetworkParameter> flattendList)
         {
@@ -61,7 +69,8 @@ namespace MicrowaveNetworks
                 throw new ArgumentOutOfRangeException(nameof(flattenedList), "List must contain (num-ports) squared elements.");
 
             NumPorts = ports;
-            parametersMatrix = new Dictionary<(int destPort, int sourcePort), NetworkParameter>();
+            //parametersMatrix = new Dictionary<(int destPort, int sourcePort), NetworkParameter>();
+            matrix = DenseMatrix.Create(ports, ports, Complex.Zero);
 
             using (var enumer = flattenedList.GetEnumerator())
             {
@@ -74,9 +83,14 @@ namespace MicrowaveNetworks
 
                         if (format == ListFormat.SourcePortMajor)
                         {
-                            parametersMatrix[(i, j)] = s;
+                            //parametersMatrix[(i, j)] = s;
+                            matrix[i - 1, j - 1] = s;
                         }
-                        else parametersMatrix[(j, i)] = s;
+                        else
+                        {
+                            //parametersMatrix[(j, i)] = s;
+                            matrix[j - 1, i - 1] = s;
+                        }
                     }
                 }
             }
@@ -87,16 +101,18 @@ namespace MicrowaveNetworks
             get
             {
                 ValidateIndicies(destinationPort, sourcePort);
-                bool exists = parametersMatrix.TryGetValue((destinationPort, sourcePort), out NetworkParameter s);
+                /*bool exists = parametersMatrix.TryGetValue((destinationPort, sourcePort), out NetworkParameter s);
                 if (exists) return s;
                 // Rather than filling the whole matrix with the unity parameter, simply return unity whenever the value for the requested
                 // port has not been set.
-                else return NetworkParameter.One;
+                else return NetworkParameter.One;*/
+                return matrix[destinationPort - 1, sourcePort - 1];
             }
             set
             {
                 ValidateIndicies(destinationPort, sourcePort);
-                parametersMatrix[(destinationPort, sourcePort)] = value;
+                //parametersMatrix[(destinationPort, sourcePort)] = value;
+                matrix[destinationPort - 1, sourcePort - 1] = value;
             }
         }
 
@@ -163,5 +179,7 @@ namespace MicrowaveNetworks
             }*/
             return sb.ToString();
         }
+
+        protected NetworkParameter Determinant() => matrix.Determinant();
     }
 }

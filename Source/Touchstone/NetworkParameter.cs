@@ -46,11 +46,29 @@ namespace MicrowaveNetworks
         public static bool operator ==(NetworkParameter left, NetworkParameter right) => left.Equals(right);
         public static bool operator !=(NetworkParameter left, NetworkParameter right) => !left.Equals(right);
 
+        public static NetworkParameter operator -(NetworkParameter param) => -param.complex;
+        public static NetworkParameter operator +(NetworkParameter left, NetworkParameter right) => left.complex + right.complex;
+        public static NetworkParameter operator -(NetworkParameter left, NetworkParameter right) => left.complex - right.complex;
+        public static NetworkParameter operator *(NetworkParameter left, NetworkParameter right) => left.complex * right.complex;
+        public static NetworkParameter operator /(NetworkParameter left, NetworkParameter right) => left.complex / right.complex;
         #endregion
 
         #region Overrides
         public override int GetHashCode() => complex.GetHashCode();
-        public override bool Equals(object obj) => complex.Equals(obj);
+        public override bool Equals(object obj)
+        {
+            switch (obj)
+            {
+                case NetworkParameter param:
+                    return Equals(param);
+                case Complex complex:
+                    return Equals(complex);
+                default:
+                    return this.complex.Equals(obj);
+            }
+        }
+        public override string ToString() => complex.ToString();
+        public string ToString(string format) => complex.ToString(format);
         #endregion
 
         #region Interface Implementations

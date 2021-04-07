@@ -11,6 +11,7 @@ using System.Threading;
 using System.Runtime.CompilerServices;
 using Touchstone.Internal;
 using System.Collections;
+using MicrowaveNetworks.Matrices;
 
 namespace MicrowaveNetworks.Touchstone.IO
 {

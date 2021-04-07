@@ -3,6 +3,7 @@ using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using MicrowaveNetworks.Matrices;
 
 namespace MicrowaveNetworks
 {
@@ -60,9 +61,11 @@ namespace MicrowaveNetworks
                 }
                 else
                 {
-                    NetworkParametersMatrix matrix = new NetworkParametersMatrix(NumberOfPorts);
-                    matrix[destinationPort, sourcePort] = value;
-                    _NetworkParameters.Add(frequency, matrix);
+//TODO
+                    throw new NotImplementedException();
+                    //NetworkParametersMatrix matrix = new NetworkParametersMatrix(NumberOfPorts);
+                    //matrix[destinationPort, sourcePort] = value;
+                    //_NetworkParameters.Add(frequency, matrix);
                 }
             }
         }
