@@ -5,10 +5,11 @@ using System.Text;
 using System.Threading.Tasks;
 using System.IO;
 using System.Globalization;
-using static Touchstone.Internal.Utilities;
+using static MicrowaveNetworks.Internal.Utilities;
 using static MicrowaveNetworks.Touchstone.IO.Constants;
 using System.Text.RegularExpressions;
 using MicrowaveNetworks.Matrices;
+using System.Threading;
 
 namespace MicrowaveNetworks.Touchstone.IO
 {
@@ -16,6 +17,7 @@ namespace MicrowaveNetworks.Touchstone.IO
     {
         public TouchstoneOptions Options { get; set; } = new TouchstoneOptions();
         public TouchstoneKeywords Keywords { get; set; } = new TouchstoneKeywords();
+        public CancellationToken CancelToken { get; set; } = default;
 
         protected TextWriter Writer { get; set; }
 
@@ -88,7 +90,7 @@ namespace MicrowaveNetworks.Touchstone.IO
 
             var result = ForEachParameter(numberOfPorts, indices =>
             {
-                (int source, int dest) = indices;
+                (int dest, int source) = indices;
                 string column1 = $"{parameter}{dest}{source}:{description1}";
                 string column2 = $"{parameter}{dest}{source}:{description2}";
 
@@ -188,11 +190,16 @@ namespace MicrowaveNetworks.Touchstone.IO
         public async Task WriteEntryAsync(double frequency, NetworkParametersMatrix matrix)
         {
             if (!headerWritten) await WriteHeaderAsync();
+            
+            CancelToken.ThrowIfCancellationRequested();
+
             if (settings.IncludeColumnNames && !columnsWritten)
             {
                 string columns = FormatColumns(matrix.NumPorts);
                 await WriteCommentLineAsync(columns);
                 columnsWritten = true;
+
+                CancelToken.ThrowIfCancellationRequested();
             }
             string line = FormatEntry(frequency, matrix);
             await Writer.WriteLineAsync(line);

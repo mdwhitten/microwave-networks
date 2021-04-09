@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using System.Numerics;
-using Touchstone.Internal;
+using MicrowaveNetworks.Internal;
 using MathNet.Numerics.LinearAlgebra.Complex;
 
 namespace MicrowaveNetworks.Matrices
@@ -33,7 +33,7 @@ namespace MicrowaveNetworks.Matrices
         SourcePortMajor,
         DestinationPortMajor
     }
-    public  class NetworkParametersMatrix : IEnumerable<PortNetworkParameterPair>
+    public abstract partial class NetworkParametersMatrix : IEnumerable<PortNetworkParameterPair>
     {
         //private Dictionary<(int destPort, int sourcePort), NetworkParameter> parametersMatrix;
 
@@ -72,28 +72,15 @@ namespace MicrowaveNetworks.Matrices
             //parametersMatrix = new Dictionary<(int destPort, int sourcePort), NetworkParameter>();
             matrix = DenseMatrix.Create(ports, ports, Complex.Zero);
 
-            using (var enumer = flattenedList.GetEnumerator())
-            {
-                for (int i = 1; i <= NumPorts; i++)
-                {
-                    for (int j = 1; j <= NumPorts; j++)
-                    {
-                        enumer.MoveNext();
-                        NetworkParameter s = enumer.Current;
 
-                        if (format == ListFormat.SourcePortMajor)
-                        {
-                            //parametersMatrix[(i, j)] = s;
-                            matrix[i - 1, j - 1] = s;
-                        }
-                        else
-                        {
-                            //parametersMatrix[(j, i)] = s;
-                            matrix[j - 1, i - 1] = s;
-                        }
-                    }
-                }
-            }
+            int i = 0;
+            Utilities.ForEachParameter(NumPorts, format, index =>
+            {
+                int row = index.DestinationPort - 1;
+                int column = index.SourcePort - 1;
+                matrix[row, column] = flattenedList[i];
+                i++;
+            });
         }
 
         public NetworkParameter this[int destinationPort, int sourcePort]
@@ -145,14 +132,8 @@ namespace MicrowaveNetworks.Matrices
             // No other values are configured for the matrix so they do not exist in the dictionary; hence,
             // only one value would be returned. Instead, we want to return unity for all non-configured parameters,
             // which is what the indexer above does.
-            for (int i = 1; i <= NumPorts; i++)
-            {
-                for (int j = 1; j <= NumPorts; j++)
-                {
-                    NetworkParameter s = format == ListFormat.SourcePortMajor ? this[i, j] : this[j, i];
-                    yield return new PortNetworkParameterPair((i, j), s);
-                }
-            }
+            var parameters = Utilities.ForEachParameter(NumPorts, format, index => new PortNetworkParameterPair(index, this[index.DestinationPort, index.SourcePort]));
+            return parameters.GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()
@@ -163,23 +144,44 @@ namespace MicrowaveNetworks.Matrices
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            for (int i = 1; i <= NumPorts; i++)
+            Utilities.ForEachParameter(NumPorts, ListFormat.DestinationPortMajor, index =>
             {
-                sb.Append("[");
-                for (int j = 1; j <= NumPorts; j++)
-                {
-                    sb.Append($"S{i}{j}: {this[i, j]}\t");
-                }
-                sb.AppendLine("]");
-            }/*
-            foreach (var parameters in this)
-            {
-                (int dest, int source) = parameters.Index;
-                sb.AppendLine($"[{dest}, {source}] = {parameters.NetworkParameter}");
-            }*/
+                (int dest, int source) = index;
+
+                // When row starts, add a new '['
+                if (source == 1) sb.Append("[");
+                sb.Append($"S{dest}{source}: {this[dest, source]}");
+                // End of row - start the next
+                if (source == NumPorts) sb.AppendLine("]");
+                else sb.Append("\t");
+
+            });
             return sb.ToString();
         }
 
         protected NetworkParameter Determinant() => matrix.Determinant();
+        private NetworkParametersMatrix ConvertParameterType(Type parameterType)
+        {
+            switch (true)
+            {
+                case true when parameterType == typeof(ScatteringParametersMatrix):
+                    return ToSParameters();
+                case true when parameterType == typeof(TransferParametersMatrix):
+                    return ToTParameters();
+                default:
+                    throw new NotImplementedException();
+            };
+        }
+
+        public T ConvertParameterType<T>() where T : NetworkParametersMatrix
+        {
+            Type tType = typeof(T);
+
+            return (T)ConvertParameterType(tType);
+        }
+
+        protected abstract ScatteringParametersMatrix ToSParameters();
+        protected abstract TransferParametersMatrix ToTParameters();
+
     }
 }

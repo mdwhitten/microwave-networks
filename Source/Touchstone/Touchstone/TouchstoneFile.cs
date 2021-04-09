@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Threading;
 using System.IO;
 using MicrowaveNetworks.Touchstone.IO;
+using MicrowaveNetworks.Matrices;
+using MicrowaveNetworks.Internal;
+using System.Threading.Tasks;
 
 namespace MicrowaveNetworks.Touchstone
 {
@@ -17,7 +20,7 @@ namespace MicrowaveNetworks.Touchstone
     /// </summary>
     public enum FrequencyUnit
     {
-        Hz = 1,
+        Hz = 0,
         kHz = 3,
         MHz = 6,
         GHz = 9
@@ -114,37 +117,73 @@ namespace MicrowaveNetworks.Touchstone
         [TouchstoneParameter("Matrix Format")]
         public MatrixFormat? MatrixFormat;
     }
-    public class TouchstoneNetworkData
+    public class TouchstoneFile
     {
         public TouchstoneOptions Options { get; set; } = new TouchstoneOptions();
         public TouchstoneKeywords Keywords { get; set; } = new TouchstoneKeywords();
 
         public NetworkParametersCollection NetworkParameters { get; set; }
 
-        internal TouchstoneNetworkData() { }
-        public TouchstoneNetworkData(int numPorts, TouchstoneOptions opts)
+        internal TouchstoneFile() { }
+        public TouchstoneFile(int numPorts, TouchstoneOptions opts)
         {
-            NetworkParameters = new NetworkParametersCollection(numPorts);
+            Type parameterType = opts.Parameter.ToNetworkParameterMatrixType();
+            NetworkParameters = new NetworkParametersCollection(numPorts, parameterType);
+            Options = opts;
+        }
+        public TouchstoneFile(NetworkParametersCollection parameters)
+        {
+            NetworkParameters = parameters;
         }
 
-        private TouchstoneNetworkData(TouchstoneReader reader, CancellationToken token = default)
+        public TouchstoneFile(string filePath, TouchstoneReaderSettings settings)
+        {
+            if (filePath == null) throw new ArgumentNullException(nameof(filePath));
+            if (!File.Exists(filePath)) throw new FileNotFoundException("File not found", filePath);
+
+            using (TouchstoneReader reader = TouchstoneReader.CreateWithFile(filePath, settings))
+            {
+                FromFile(reader);
+            }
+        }
+        private void FromFile(TouchstoneReader reader, CancellationToken token = default)
         {
             Options = reader.Options;
             Keywords = reader.Keywords;
 
-
-            foreach (var (frequency, matrix) in reader)
-            {
-                if (NetworkParameters == null)
-                {
-                    NetworkParameters = new NetworkParametersCollection(matrix.NumPorts);
-                }
-                NetworkParameters.Add(frequency, matrix);
-                token.ThrowIfCancellationRequested();
-            }
+            NetworkParameters = ReadNetworkParameters(reader, token);
 
             // If no version is set that makes this version 1.0
             Keywords.Version = Keywords.Version ?? FileVersion.One;
+        }
+
+        private static NetworkParametersCollection ReadNetworkParameters(TouchstoneReader reader, CancellationToken token = default)
+        {
+            NetworkParametersCollection networkParameters = null;
+            foreach (var (frequency, matrix) in reader)
+            {
+                if (networkParameters == null)
+                {
+                    Type paramType = reader.Options.Parameter.ToNetworkParameterMatrixType();
+                    networkParameters = new NetworkParametersCollection(matrix.NumPorts, paramType);
+                }
+                networkParameters.Add(frequency, matrix);
+                token.ThrowIfCancellationRequested();
+            }
+            return networkParameters;
+        }
+        public static NetworkParametersCollection ReadData(string filePath)
+        {
+
+            if (filePath == null) throw new ArgumentNullException(nameof(filePath));
+            if (!File.Exists(filePath)) throw new FileNotFoundException("File not found", filePath);
+
+            TouchstoneReaderSettings settings = new TouchstoneReaderSettings();
+
+            using (TouchstoneReader reader = TouchstoneReader.CreateWithFile(filePath, settings))
+            {
+                return ReadNetworkParameters(reader);
+            }
         }
 
         /*public static async Task<Touchstone> FromFileAsync(string filePath, TouchstoneReaderSettings settings)
@@ -168,7 +207,11 @@ namespace MicrowaveNetworks.Touchstone
             }
             return stringWriter.ToString();
         }
-        public void ToFile(string filePath, TouchstoneWriterSettings settings)
+        public void Write(string filePath)
+        {
+            Write(filePath, new TouchstoneWriterSettings());
+        }
+        public void Write(string filePath, TouchstoneWriterSettings settings)
         {
             if (filePath == null) throw new ArgumentNullException(nameof(filePath));
 
@@ -185,17 +228,29 @@ namespace MicrowaveNetworks.Touchstone
                 writer.Flush();
             };
         }
-        public static TouchstoneNetworkData FromFile(string filePath, TouchstoneReaderSettings settings)
+        public async Task WriteAsync(string filePath, CancellationToken token = default)
+        {
+            await WriteAsync(filePath, new TouchstoneWriterSettings());
+        }
+        public async Task WriteAsync(string filePath, TouchstoneWriterSettings settings, CancellationToken token = default)
         {
             if (filePath == null) throw new ArgumentNullException(nameof(filePath));
-            if (!File.Exists(filePath)) throw new FileNotFoundException("File not found", filePath);
 
-            using (TouchstoneReader reader = TouchstoneReader.CreateWithFile(filePath, settings))
+            using (TouchstoneFileWriter writer = new TouchstoneFileWriter(filePath, settings))
             {
-                return new TouchstoneNetworkData(reader);
-            }
-        }
+                writer.Options = Options;
+                writer.Keywords = Keywords;
+                writer.CancelToken = token;
 
+                foreach (var pair in NetworkParameters)
+                {
+                    token.ThrowIfCancellationRequested();
+                    await writer.WriteEntryAsync(pair);
+                }
+
+                writer.Flush();
+            };
+        }
         /*public static async Task<Touchstone> FromTextAsync(string fileText)
         {
             if (fileText == null) throw new ArgumentNullException(nameof(fileText));
@@ -206,15 +261,15 @@ namespace MicrowaveNetworks.Touchstone
                 return await parser.ParseAsync();
             }
         }*/
-
-        public static TouchstoneNetworkData FromString(string fileText, TouchstoneReaderSettings settings)
+        /*
+        public static TouchstoneFile FromString(string fileText, TouchstoneReaderSettings settings)
         {
             if (fileText == null) throw new ArgumentNullException(nameof(fileText));
 
             using (TouchstoneReader reader = TouchstoneReader.CreateWithString(fileText, settings))
             {
-                return new TouchstoneNetworkData(reader);
+                return new TouchstoneFile(reader);
             }
-        }
+        }*/
     }
 }

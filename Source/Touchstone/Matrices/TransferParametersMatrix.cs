@@ -7,23 +7,38 @@ using System.Threading.Tasks;
 
 namespace MicrowaveNetworks.Matrices
 {
+    using SymmetryExtension;
     public sealed class TransferParametersMatrix : NetworkParametersMatrix
     {
         private TransferParametersMatrix(int numPorts, DenseMatrix matrix)
             : base(numPorts, matrix) { }
         public TransferParametersMatrix(int numPorts) : base(numPorts) { }
 
-
-        public static explicit operator ScatteringParametersMatrix(TransferParametersMatrix t)
+        internal TransferParametersMatrix(SymmetryMatrix symmetryMatrix)
+            : base(symmetryMatrix.NumberOfPorts)
         {
-            return new ScatteringParametersMatrix(t.NumPorts)
+            if (symmetryMatrix.NumberOfPorts == 2)
             {
-                [1, 1] = t[1, 2] / t[2, 2],
-                [1, 2] = t.Determinant() / t[2, 2],
-                [2, 1] = NetworkParameter.One / t[2, 2],
-                [2, 2] = -t[2, 1] / t[2, 2]
+                this[1, 1] = (NetworkParameterElement)(ISymmetryMatrixElement)symmetryMatrix.OneOne;
+                this[1, 2] = (NetworkParameterElement)(ISymmetryMatrixElement)symmetryMatrix.OneTwo;
+                this[2, 1] = (NetworkParameterElement)(ISymmetryMatrixElement)symmetryMatrix.TwoOne;
+                this[2, 2] = (NetworkParameterElement)(ISymmetryMatrixElement)symmetryMatrix.TwoTwo;
+            }
+            else throw new NotImplementedException();
+        }
+        protected override ScatteringParametersMatrix ToSParameters()
+        {
+            return new ScatteringParametersMatrix(NumPorts)
+            {
+                [1, 1] = this[1, 2] / this[2, 2],
+                [1, 2] = this.Determinant() / this[2, 2],
+                [2, 1] = NetworkParameter.One / this[2, 2],
+                [2, 2] = -this[2, 1] / this[2, 2]
             };
         }
+        protected override TransferParametersMatrix ToTParameters() => this;
+
+        public static explicit operator ScatteringParametersMatrix(TransferParametersMatrix t) => t.ToSParameters();
 
         public static TransferParametersMatrix operator *(TransferParametersMatrix t1, TransferParametersMatrix t2)
         {

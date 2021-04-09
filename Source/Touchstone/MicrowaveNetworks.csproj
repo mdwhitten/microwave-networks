@@ -38,7 +38,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Internal\Utilities.cs" />
+    <Compile Include="Matrices\NetworkParametersMatrixOperations.cs" />
     <Compile Include="Matrices\ScatteringParametersMatrix.cs" />
+    <Compile Include="Matrices\SymmetryExtension\NetworkParameterElement.cs" />
+    <Compile Include="Matrices\SymmetryExtension\ISymmetryMatrixElement.cs" />
+    <Compile Include="Matrices\SymmetryExtension\SymmetryMatrix.cs" />
     <Compile Include="Matrices\TransferParametersMatrix.cs" />
     <Compile Include="Touchstone\IO\Constants.cs" />
     <Compile Include="Touchstone\IO\FieldNameLookup.cs" />
@@ -55,7 +59,7 @@
     <Compile Include="NetworkParametersCollection.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Matrices\NetworkParametersMatrix.cs" />
-    <Compile Include="Touchstone\TouchstoneNetworkData.cs" />
+    <Compile Include="Touchstone\TouchstoneFile.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics">

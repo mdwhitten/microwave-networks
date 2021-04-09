@@ -8,16 +8,9 @@ namespace MicrowaveNetworks.Touchstone.IO
 {
     public sealed class TouchstoneReaderSettings
     {
-        public bool ValidateFile;
+        public bool ValidateFile = true;
 
-        public Predicate<double> FrequencySelector;
-        public Predicate<(int DestPort, int SourcePort)> ParameterSelector;
-
-        public static TouchstoneReaderSettings Default => new TouchstoneReaderSettings
-        {
-            ValidateFile = true,
-            FrequencySelector = null,
-            ParameterSelector = null
-        };
+        public Predicate<double> FrequencySelector = null;
+        public Predicate<(int DestPort, int SourcePort)> ParameterSelector = null;
     }
 }

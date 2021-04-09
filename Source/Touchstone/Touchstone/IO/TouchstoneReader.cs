@@ -9,7 +9,7 @@ using System.Reflection;
 
 using System.Threading;
 using System.Runtime.CompilerServices;
-using Touchstone.Internal;
+using MicrowaveNetworks.Internal;
 using System.Collections;
 using MicrowaveNetworks.Matrices;
 
@@ -299,7 +299,7 @@ namespace MicrowaveNetworks.Touchstone.IO
 
                 cancelToken.ThrowIfCancellationRequested();
 
-                NetworkParametersMatrix matrix = new NetworkParametersMatrix(parameters, format);
+                ScatteringParametersMatrix matrix = new ScatteringParametersMatrix(parameters, format);
 
                 pair = new FrequencyParametersPair(frequency, matrix);
             }
@@ -308,9 +308,9 @@ namespace MicrowaveNetworks.Touchstone.IO
         }
         #endregion
 
-        public static TouchstoneReader CreateWithFile(string filePath) => CreateWithFile(filePath, TouchstoneReaderSettings.Default);
+        public static TouchstoneReader CreateWithFile(string filePath) => CreateWithFile(filePath, new TouchstoneReaderSettings());
         public static TouchstoneReader CreateWithFile(string filePath, TouchstoneReaderSettings settings) => new TouchstoneFileReader(filePath, settings);
-        public static TouchstoneReader CreateWithString(string fileText) => CreateWithString(fileText, TouchstoneReaderSettings.Default);
+        public static TouchstoneReader CreateWithString(string fileText) => CreateWithString(fileText, new TouchstoneReaderSettings());
         public static TouchstoneReader CreateWithString(string fileText, TouchstoneReaderSettings settings) => new TouchstoneStringReader(fileText, settings);
 
 
