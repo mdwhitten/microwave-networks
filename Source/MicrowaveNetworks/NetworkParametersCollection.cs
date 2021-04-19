@@ -1,7 +1,18 @@
 ﻿using System;
 using System.Linq;
 using System.Collections;
+using SCG = System.Collections.Generic;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Text;
+using C5;
+using MathNet.Numerics.Interpolation;
+using MicrowaveNetworks.Matrices;
+using MicrowaveNetworks.Touchstone.IO;
+using MicrowaveNetworks.Internal;
+using System.Threading.Tasks;
+
+using MathNet.Numerics;
 
 namespace MicrowaveNetworks
 {
@@ -24,12 +35,12 @@ namespace MicrowaveNetworks
             Parameters = parameters;
         }
 
-        /// <summary>Creates a <see cref="FrequencyParametersPair"/> from a <see cref="KeyValuePair{TKey, TValue}"/> object.</summary>
-        public static implicit operator FrequencyParametersPair(KeyValuePair<double, NetworkParametersMatrix> pair)
+        /// <summary>Creates a <see cref="FrequencyParametersPair"/> from a <see cref="SCG.KeyValuePair{TKey, TValue}"/> object.</summary>
+        public static implicit operator FrequencyParametersPair(SCG.KeyValuePair<double, NetworkParametersMatrix> pair)
             => new FrequencyParametersPair(pair.Key, pair.Value);
-        /// <summary>Creates a <see cref="KeyValuePair{TKey, TValue}"/> from a <see cref="FrequencyParametersPair"/> object.</summary>
-        public static implicit operator KeyValuePair<double, NetworkParametersMatrix>(FrequencyParametersPair pair)
-            => new KeyValuePair<double, NetworkParametersMatrix>(pair.Frequency_Hz, pair.Parameters);
+        /// <summary>Creates a <see cref="SCG.KeyValuePair{TKey, TValue}"/> from a <see cref="FrequencyParametersPair"/> object.</summary>
+        public static implicit operator SCG.KeyValuePair<double, NetworkParametersMatrix>(FrequencyParametersPair pair)
+            => new SCG.KeyValuePair<double, NetworkParametersMatrix>(pair.Frequency_Hz, pair.Parameters);
 
         /// <summary>
         /// Adds support for the ValueTuple deconstruction syntax for this object.
@@ -60,17 +71,17 @@ namespace MicrowaveNetworks
             Parameters = parameters;
         }
 
-        /// <summary>Creates a <see cref="FrequencyParametersPair"/> from a <see cref="KeyValuePair{TKey, TValue}"/> object.</summary>
-        public static implicit operator FrequencyParametersPair<TMatrix>(KeyValuePair<double, TMatrix> pair)
+        /// <summary>Creates a <see cref="FrequencyParametersPair"/> from a <see cref="SCG.KeyValuePair{TKey, TValue}"/> object.</summary>
+        public static implicit operator FrequencyParametersPair<TMatrix>(SCG.KeyValuePair<double, TMatrix> pair)
             => new FrequencyParametersPair<TMatrix>(pair.Key, pair.Value);
-        /// <summary>Creates a <see cref="KeyValuePair{TKey, TValue}"/> from a <see cref="FrequencyParametersPair"/> object.</summary>
-        public static implicit operator KeyValuePair<double, TMatrix>(FrequencyParametersPair<TMatrix> pair)
-            => new KeyValuePair<double, TMatrix>(pair.Frequency_Hz, pair.Parameters);
+        /// <summary>Creates a <see cref="SCG.KeyValuePair{TKey, TValue}"/> from a <see cref="FrequencyParametersPair"/> object.</summary>
+        public static implicit operator SCG.KeyValuePair<double, TMatrix>(FrequencyParametersPair<TMatrix> pair)
+            => new SCG.KeyValuePair<double, TMatrix>(pair.Frequency_Hz, pair.Parameters);
 
         /// <summary>
         /// Adds support for the ValueTuple deconstruction syntax for this object.
         /// </summary>
-        public void Deconstruct(out double frequency, out NetworkParametersMatrix parameters)
+        public void Deconstruct(out double frequency, out TMatrix parameters)
         {
             frequency = Frequency_Hz;
             parameters = Parameters;
@@ -85,13 +96,14 @@ namespace MicrowaveNetworks
     /// Represents a collection of frequency dependent network parameters.
     /// </summary>
     /// <typeparam name="TMatrix">Specifies the network parameter type contained within this collection.</typeparam>
-    public class NetworkParametersCollection<TMatrix> : INetworkParametersCollection where TMatrix : NetworkParametersMatrix
+    public sealed class NetworkParametersCollection<TMatrix> : INetworkParametersCollection where TMatrix : NetworkParametersMatrix
     {
-        private Dictionary<double, TMatrix> _NetworkParameters = new Dictionary<double, TMatrix>();
+        private Dictionary<double, TMatrix> _NetworkParameters;
+        private SortedArray<double> frequencies;
 
         /// <summary>Gets the number of ports of the device that this collection represents.</summary>
         public int NumberOfPorts { get; }
-
+        
         /// <summary>Gets all frequencies defined in this collection in Hz.</summary>
         public IReadOnlyCollection<double> Frequencies => _NetworkParameters.Keys;
         /// <summary>Gets all the network parameters defined in this collection.</summary>
@@ -99,6 +111,7 @@ namespace MicrowaveNetworks
         IReadOnlyCollection<NetworkParametersMatrix> INetworkParametersCollection.NetworkParameters => NetworkParameters;
         /// <summary>Gets the specific subtype of <see cref="NetworkParametersMatrix"/> represented by this collection.</summary>
         /// <remarks>This collection is often created from a file and so the network parameter matrix type will not be known until after this object is created.</remarks>
+        public Type NetworkParameterType { get; }
         Type INetworkParametersCollection.NetworkParameterType => typeof(TMatrix);
 
         /// <summary>
@@ -108,6 +121,8 @@ namespace MicrowaveNetworks
         public NetworkParametersCollection(int numPorts)
         {
             NumberOfPorts = numPorts;
+            _NetworkParameters = new Dictionary<double, TMatrix>();
+            frequencies = new SortedArray<double>();
         }
         /// <summary>
         /// Creates a new network parameters collection from a seqeunce of frequency and network parameter matrix pairs.
@@ -127,26 +142,52 @@ namespace MicrowaveNetworks
                 this[pair.Frequency_Hz] = pair.Parameters;
             }
         }
+        public NetworkParametersCollection(SCG.IList<FrequencyParametersPair<TMatrix>> parameters, bool sorted = false)
+        {
+            _NetworkParameters = new Dictionary<double, TMatrix>(parameters.Count);
+            frequencies = new SortedArray<double>(parameters.Count);
+
+            foreach (var (frequency, data) in parameters)
+            {
+                _NetworkParameters[frequency] = data;
+                if (!sorted) frequencies.Add(frequency);
+            }
+            if (sorted) frequencies.AddSorted(parameters.Select(p => p.Frequency_Hz));
+        }
+
         /// <summary>
-        /// Gets or sets a <see cref="NetworkParametersMatrix"/> corresponding to the specified frequency.
+        /// Gets or sets <see cref="NetworkParametersMatrix"/> corresponding to the specified frequency.
         /// </summary>
         /// <param name="frequency">The specified frequency associated with the network data.</param>
         /// <returns>The <see cref="NetworkParametersMatrix"/> measured or derived at <paramref name="frequency"/>.</returns>
         public TMatrix this[double frequency]
         {
-            get => _NetworkParameters[frequency];
-            set => _NetworkParameters[frequency] = value;
+            get
+            {
+                bool exists = _NetworkParameters.TryGetValue(frequency, out TMatrix value);
+                if (exists) return value;
+                /*else if (Interpolation.Enabled)
+                {
+
+                }*/
+                else
+                {
+                    throw new KeyNotFoundException($"No value exists for frequency {frequency}.");
+                }
+            }
+            set
+            {
+                if (value.NumPorts != NumberOfPorts)
+                {
+                    throw new ArgumentException("All network parameter matrices must have the same number of ports.");
+                }
+                _NetworkParameters[frequency] = value;
+                frequencies.Add(frequency);
+            }
         }
-        /// <summary>
-        /// Gets or sets <see cref="NetworkParameter"/> corresponding to the specified frequency and parameter index.
-        /// </summary>
-        /// <param name="frequency">The specified frequency associated with the network data.</param>
-        /// <param name="destinationPort">The destination port of the <see cref="NetworkParameter"/>.</param>
-        /// <param name="sourcePort">The source port of the <see cref="NetworkParameter"/>.</param>
-        /// <returns>The <see cref="NetworkParameter"/> measured or derived at <paramref name="frequency"/> at index [<paramref name="destinationPort"/>, <paramref name="sourcePort"/>].</returns>
         public NetworkParameter this[double frequency, int destinationPort, int sourcePort]
         {
-            get => _NetworkParameters[frequency][destinationPort, sourcePort];
+            get => this[frequency][destinationPort, sourcePort];
             set
             {
                 bool exists = _NetworkParameters.ContainsKey(frequency);
@@ -159,6 +200,7 @@ namespace MicrowaveNetworks
                     TMatrix matrix = (TMatrix)Activator.CreateInstance(typeof(TMatrix), NumberOfPorts);
                     matrix[destinationPort, sourcePort] = value;
                     _NetworkParameters.Add(frequency, matrix);
+                    frequencies.Add(frequency);
                 }
             }
         }
@@ -181,13 +223,22 @@ namespace MicrowaveNetworks
         /// <summary>
         /// Removes all frequencies and network parameter matrices from the collection.
         /// </summary>
-        public void Clear() => _NetworkParameters.Clear();
+        public void Clear()
+        {
+            _NetworkParameters.Clear();
+            frequencies.Clear();
+        }
         /// <summary>
         /// Attempts to remove the <see cref="NetworkParametersMatrix"/> at the specified frequency from the collection.
         /// </summary>
         /// <param name="frequency">The frequency at which to remove the <see cref="NetworkParametersMatrix"/>.</param>
         /// <returns>True if the element is successfully found and removed; false if not.</returns>
-        public bool Remove(double frequency) => _NetworkParameters.Remove(frequency);
+        public bool Remove(double frequency)
+        {
+            bool one = _NetworkParameters.Remove(frequency);
+            bool two = frequencies.Remove(frequency);
+            return one & two;
+        }
         /// <summary>
         /// Gets the <see cref="NetworkParametersMatrix"/> associated with the specified frequency.
         /// </summary>
@@ -238,7 +289,7 @@ namespace MicrowaveNetworks
         }
 
         #region Explicit ICollection Implementations
-        bool ICollection<FrequencyParametersPair>.IsReadOnly => false;
+        bool SCG.ICollection<FrequencyParametersPair>.IsReadOnly => false;
 
 
         NetworkParametersMatrix INetworkParametersCollection.this[double frequency]
@@ -248,18 +299,24 @@ namespace MicrowaveNetworks
         }
 
 
-        bool ICollection<FrequencyParametersPair>.Contains(FrequencyParametersPair item)
-            => ((ICollection<KeyValuePair<double, NetworkParametersMatrix>>)_NetworkParameters).Contains(item);
-
-        void ICollection<FrequencyParametersPair>.CopyTo(FrequencyParametersPair[] array, int arrayIndex)
+        bool SCG.ICollection<FrequencyParametersPair>.Contains(FrequencyParametersPair item)
         {
-            var arr = Array.ConvertAll(array, f => (KeyValuePair<double, NetworkParametersMatrix>)f);
-            ((ICollection<KeyValuePair<double, NetworkParametersMatrix>>)_NetworkParameters).CopyTo(arr, arrayIndex);
+            if (_NetworkParameters.TryGetValue(item.Frequency_Hz, out TMatrix value))
+            {
+                return value.Equals(item.Parameters);
+            }
+            else return false;
         }
 
-        bool ICollection<FrequencyParametersPair>.Remove(FrequencyParametersPair item)
+        void SCG.ICollection<FrequencyParametersPair>.CopyTo(FrequencyParametersPair[] array, int arrayIndex)
         {
-            return ((ICollection<KeyValuePair<double, NetworkParametersMatrix>>)_NetworkParameters).Remove(item);
+            var arr = Array.ConvertAll(array, f => (SCG.KeyValuePair<double, NetworkParametersMatrix>)f);
+            ((SCG.ICollection<SCG.KeyValuePair<double, NetworkParametersMatrix>>)_NetworkParameters).CopyTo(arr, arrayIndex);
+        }
+
+        bool SCG.ICollection<FrequencyParametersPair>.Remove(FrequencyParametersPair item)
+        {
+            return Remove(item.Frequency_Hz);
         }
 
         void INetworkParametersCollection.Add(double frequency, NetworkParametersMatrix parameters)
@@ -277,7 +334,7 @@ namespace MicrowaveNetworks
             return found;
         }
 
-        void ICollection<FrequencyParametersPair>.Add(FrequencyParametersPair item) => Add(item.Frequency_Hz, item.Parameters.ConvertParameterType<TMatrix>());
+        void SCG.ICollection<FrequencyParametersPair>.Add(FrequencyParametersPair item) => Add(item.Frequency_Hz, item.Parameters.ConvertParameterType<TMatrix>());
 
         IEnumerator<FrequencyParametersPair> IEnumerable<FrequencyParametersPair>.GetEnumerator()
         {
@@ -291,6 +348,16 @@ namespace MicrowaveNetworks
         }
         #endregion
 
+    }
+
+    public enum InteropolationMethods
+    {
+        Linear
+    }
+    public class InteropolationOptions
+    {
+        public bool Enabled;
+        public InteropolationMethods Method; 
     }
     public static class CollectionUtilities
     {
