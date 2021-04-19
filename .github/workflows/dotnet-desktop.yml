@@ -58,7 +58,7 @@ jobs:
 
     env:
       Solution_Name: Source\MicrowaveNetworks.sln                         # Replace with your solution name, i.e. MyWpfApp.sln.
-      Test_Project_Path: Tests\ScatteringParametersTests.sln                 # Replace with the path to your test project, i.e. MyWpfApp.Tests\MyWpfApp.Tests.csproj.
+      Test_Project_Path: Tests\ScatteringParametersTests\ScatteringParametersTests.csproj                 # Replace with the path to your test project, i.e. MyWpfApp.Tests\MyWpfApp.Tests.csproj.
       Actions_Allow_Unsecure_Commands: true # Allows AddPAth and SetEnv commands
       
     steps:
