@@ -8,23 +8,28 @@ using System.Threading.Tasks;
 namespace MicrowaveNetworks.Matrices
 {
     using SymmetryExtension;
+    using System.Numerics;
+
     public sealed class TransferParametersMatrix : NetworkParametersMatrix
     {
         private TransferParametersMatrix(int numPorts, DenseMatrix matrix)
             : base(numPorts, matrix) { }
         public TransferParametersMatrix(int numPorts) : base(numPorts) { }
 
-        internal TransferParametersMatrix(SymmetryMatrix symmetryMatrix)
-            : base(symmetryMatrix.NumberOfPorts)
+        internal static  TransferParametersMatrix FromSymmetryMatrix<T>(SymmetryMatrix<T> symm)
         {
-            if (symmetryMatrix.NumberOfPorts == 2)
+            TransferParametersMatrix t = new TransferParametersMatrix(symm.NumberOfPorts);
+
+            if (symm.NumberOfPorts == 2 && symm is SymmetryMatrix<NetworkParameter> complex)
             {
-                this[1, 1] = (NetworkParameterElement)(ISymmetryMatrixElement)symmetryMatrix.OneOne;
-                this[1, 2] = (NetworkParameterElement)(ISymmetryMatrixElement)symmetryMatrix.OneTwo;
-                this[2, 1] = (NetworkParameterElement)(ISymmetryMatrixElement)symmetryMatrix.TwoOne;
-                this[2, 2] = (NetworkParameterElement)(ISymmetryMatrixElement)symmetryMatrix.TwoTwo;
+                t[1, 1] = (NetworkParameter)complex[1, 1];
+                t[1, 2] = complex.OneTwo;
+                t[2, 1] = complex.TwoOne;
+                t[2, 2] = complex.TwoTwo;
+                return t;
             }
             else throw new NotImplementedException();
+
         }
         protected override ScatteringParametersMatrix ToSParameters()
         {

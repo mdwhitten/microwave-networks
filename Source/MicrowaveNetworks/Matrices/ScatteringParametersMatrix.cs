@@ -20,13 +20,15 @@ namespace MicrowaveNetworks.Matrices
         protected override ScatteringParametersMatrix ToSParameters() => this;
         protected override TransferParametersMatrix ToTParameters()
         {
-            SymmetryMatrix s = new SymmetryMatrix(NumPorts);
+            //SymmetryMatrix s = new SymmetryMatrix(NumPorts);
             switch (NumPorts)
             {
                 case 1:
                     throw new InvalidOperationException("T parameter conversion invalid for single port network.");
                 case 2:
-                    return TwoPortStoT();
+                    var a = SymmetryMatrix<NetworkParameter>.From2PortData(this);
+                    var b = StoT(a);
+                    return TransferParametersMatrix.FromSymmetryMatrix(b);
                 case var _ when NumPorts % 2 == 0:
                     throw new NotImplementedException();
                 default:
@@ -44,7 +46,16 @@ namespace MicrowaveNetworks.Matrices
                 [2, 2] = Complex.Reciprocal(this[2, 1])
             };
         }
-
-
+        private SymmetryMatrix<T> StoT<T>(SymmetryMatrix<T> s)
+        {
+            return new SymmetryMatrix<T>
+            {
+                NumberOfPorts = s.NumberOfPorts,
+                [1, 1] = s[1, 2] - s[1, 1] * s[2, 1].Inverse() * s[2, 1],
+                [1, 2] = s[1, 1] * s[2, 1].Inverse(),
+                [2, 1] = -s[2, 1].Inverse() * s[2, 2],
+                [2, 2] = s[2, 1].Inverse(),
+            };
+        }
     }
 }
