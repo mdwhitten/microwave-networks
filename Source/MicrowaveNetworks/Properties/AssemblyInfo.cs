@@ -6,10 +6,10 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Touchstone")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("A library implementing common tools for working with microwave networks including reading/writing to Touchstone (.snp) files, de/embedding network parameters, etc.")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Touchstone")]
+[assembly: AssemblyCompany("NI")]
+[assembly: AssemblyProduct("MicrowaveNetworks")]
 [assembly: AssemblyCopyright("Copyright ©  2020")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
