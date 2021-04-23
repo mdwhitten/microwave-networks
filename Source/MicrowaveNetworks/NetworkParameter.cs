@@ -4,40 +4,80 @@ using static System.Math;
 
 namespace MicrowaveNetworks
 {
+    /// <summary>
+    /// A simple wrapper around <see cref="Complex"/> adding support for creating/reading the magnitude value in 
+    /// decibels and phase value in degrees. Implicit conversions exist to/from <see cref="Complex"/>, as well as
+    /// a public constructor to create from an existing object. Some functions of <see cref="Complex"/>
+    /// hav been exposed here, but for those that are not exposed convert to/from a <see cref="Complex"/> to access them.
+    /// </summary>
     public readonly struct NetworkParameter : IEquatable<Complex>, IEquatable<NetworkParameter>
     {
         private readonly Complex complex;
 
+        /// <summary>Gets the imaginary component of the current object.</summary>
         public double Imaginary => complex.Imaginary;
+        /// <summary>Gets the real component of the current of the current object.</summary>
         public double Real => complex.Real;
+        /// <summary>Gets the magnitude (or absolute value) of a complex number.</summary>
         public double Magnitude => complex.Magnitude;
+        /// <summary>Gets the magnitude (or absolute value) of a complex number in decibels (dB).</summary>
         public double Magnitude_dB => complex.Magnitude.FromLinear();
+        /// <summary>Gets the phase of a complex number in radians.</summary>
         public double Phase => complex.Phase;
+        /// <summary>Gets the phase of a complex number in degrees.</summary>
         public double Phase_deg => complex.Phase.ToDegree();
 
-        private NetworkParameter(Complex complex) => this.complex = complex;
+        #region Regular and Static Constructors
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NetworkParameter"/> structure from an existing <see cref="Complex"/> structure.
+        /// </summary>
+        /// <param name="complex">The existing <see cref="Complex"/> number.</param>
+        public NetworkParameter(Complex complex) => this.complex = complex;
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NetworkParameter"/> structure using the specified real and imaginary values.
+        /// </summary>
+        /// <param name="real">The real part of the complex number.</param>
+        /// <param name="imaginary">The imaginary part of the complex number.</param>
         public NetworkParameter(double real, double imaginary)
         {
             complex = new Complex(real, imaginary);
         }
-
+        /// <summary>Creates a new <see cref="NetworkParameter"/> from polar coordinates from a magnitude in decibels
+        /// and a phase in degrees.</summary>
+        /// <param name="magnitude_dB">The magnitude (absolute value) of the complex number in decibels (dB).</param>
+        /// <param name="phase_deg">The phase of the complex number in degrees.</param>
+        /// <returns>A new <see cref="NetworkParameter"/>.</returns>
         public static NetworkParameter FromPolarDecibelDegree(double magnitude_dB, double phase_deg)
         {
             double mag = magnitude_dB.ToLinear();
             double phase = phase_deg.ToRad();
             return new NetworkParameter(Complex.FromPolarCoordinates(mag, phase));
         }
+        /// <summary>Creates a new <see cref="NetworkParameter"/> from polar coordinates from a magnitude and phase
+        /// in degrees.</summary>
+        /// <param name="magnitude">The magnitude (absolute value) of the complex number.</param>
+        /// <param name="phase_deg">The phase of the complex number in degrees.</param>
+        /// <returns>A new <see cref="NetworkParameter"/>.</returns>
         public static NetworkParameter FromPolarDegree(double magnitude, double phase_deg)
         {
             double phase = phase_deg.ToRad();
             return new NetworkParameter(Complex.FromPolarCoordinates(magnitude, phase));
         }
+        /// <summary>Creates a new <see cref="NetworkParameter"/> from polar coordinates.</summary>
+        /// <param name="magnitude">The magnitude (absolute value) of the complex number.</param>
+        /// <param name="phase">The phase of the complex number in radians.</param>
+        /// <returns>A new <see cref="NetworkParameter"/>.</returns>
         public static NetworkParameter FromPolar(double magnitude, double phase)
             => new NetworkParameter(Complex.FromPolarCoordinates(magnitude, phase));
 
-
+        /// <summary>Returns a new <see cref="NetworkParameter"/> instance with a real number equal to zero
+        /// and an imaginary number equal to zero.</summary>
         public static NetworkParameter Zero => new NetworkParameter(Complex.Zero);
+        /// <summary>Returns a new <see cref="NetworkParameter"/> instance with a real number equal to one
+        /// and an imaginary number equal to zero.</summary>
         public static NetworkParameter One => new NetworkParameter(Complex.One);
+        #endregion
 
         #region Operators
         public static implicit operator Complex(NetworkParameter parameter) => parameter.complex;

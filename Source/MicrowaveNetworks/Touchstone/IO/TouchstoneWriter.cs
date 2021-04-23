@@ -1,39 +1,115 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
+using System.Linq;
+using System.Collections.Generic;
+using System.Text;
+using System.Text.RegularExpressions;
 using System.Globalization;
+using System.Threading;
+using System.Threading.Tasks;
 using static MicrowaveNetworks.Internal.Utilities;
 using static MicrowaveNetworks.Touchstone.IO.Constants;
-using System.Text.RegularExpressions;
-using MicrowaveNetworks.Matrices;
-using System.Threading;
 
 namespace MicrowaveNetworks.Touchstone.IO
 {
-    public abstract class TouchstoneWriter : IDisposable
+    /// <summary>
+    /// Provides lower-level support for rendering Touchstone files from network data and Touchstone options and keywords.
+    /// </summary>
+    public class TouchstoneWriter : IDisposable
+#if NET5_0_OR_GREATER
+                                    , IAsyncDisposable
+#endif
     {
+        /// <summary>The <see cref="TouchstoneOptions"/> that will be used to form the options line in the resulting file as well as the units and data types
+        /// of the network data.</summary>
         public TouchstoneOptions Options { get; set; } = new TouchstoneOptions();
+        /// <summary>The <see cref="TouchstoneKeywords"/> that will be used to write keywords for <see cref="FileVersion.Two"/> file types.
+        /// For <see cref="FileVersion.One"/> files (the default), these keywords are ignored as they are not valid per the specification.</summary>
         public TouchstoneKeywords Keywords { get; set; } = new TouchstoneKeywords();
+        /// <summary>The cancellation token to cancel operations if using the asynchronous write functions.</summary>
         public CancellationToken CancelToken { get; set; } = default;
 
-        protected TextWriter Writer { get; set; }
+        private TextWriter writer { get; set; }
 
         TouchstoneWriterSettings settings;
         bool headerWritten;
         bool columnsWritten;
+        TouchstoneWriterCore core;
 
-        protected TouchstoneWriter(TouchstoneWriterSettings settings)
+        private static FieldNameLookup<TouchstoneKeywords> keywordLookup = new FieldNameLookup<TouchstoneKeywords>();
+
+        private TouchstoneWriter(TextWriter writer, TouchstoneWriterSettings settings)
         {
-            this.settings = settings;
+            this.settings = settings ?? new TouchstoneWriterSettings();
+            this.writer = writer ?? throw new ArgumentNullException(nameof(writer));
         }
-        protected TouchstoneWriter(TouchstoneWriterSettings settings, TouchstoneOptions options)
+
+        #region Static Constructors
+        /// <summary>
+        /// Creates a new <see cref="TouchstoneWriter"/> using the specified file path with default <see cref="TouchstoneWriterSettings"/>.
+        /// </summary>
+        /// <param name="filePath">The file to which you want to write. The <see cref="TouchstoneWriter"/> creates a file at the specified path
+        /// or overwrites the existing file.</param>
+        /// <returns>A new <see cref="TouchstoneWriter"/> object.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="filePath"/> value is null.</exception>
+        public static TouchstoneWriter Create(string filePath) => Create(filePath, new TouchstoneWriterSettings());
+        /// <summary>
+        /// Creates a new <see cref="TouchstoneWriter"/> using the specified file path with the specified settings.
+        /// </summary>
+        /// <param name="filePath">The file to which you want to write. The <see cref="TouchstoneWriter"/> creates a file at the specified path
+        /// or overwrites the existing file.</param>
+        /// <param name="settings">The <see cref="TouchstoneWriterSettings"/> used to configure the <see cref="TouchstoneWriter"/> instance. 
+        /// If <paramref name="settings"/> is null the default settings will be used.</param>
+        /// <returns>A new <see cref="TouchstoneWriter"/> object.</returns>
+        public static TouchstoneWriter Create(string filePath, TouchstoneWriterSettings settings)
         {
-            this.Options = options;
-            this.settings = settings;
+            if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException(nameof(filePath));
+            StreamWriter writer = new StreamWriter(filePath);
+            return new TouchstoneWriter(writer, settings);
         }
+        /// <summary>
+        /// Creates a new <see cref="TouchstoneWriter"/> using the specified <see cref="TextWriter"/> with default <see cref="TouchstoneWriterSettings"/>.
+        /// </summary>
+        /// <param name="writer">The <see cref="TextWriter"/> to which you want to write. The Touchstone data will be appended to this <see cref="TextWriter"/>.</param>
+        /// <returns>A new <see cref="TouchstoneWriter"/> object.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="writer"/> value is null.</exception>
+        public static TouchstoneWriter Create(TextWriter writer) => Create(writer, new TouchstoneWriterSettings());
+        /// <summary>
+        /// Creates a new <see cref="TouchstoneWriter"/> using the specified <see cref="TextWriter"/> with default <see cref="TouchstoneWriterSettings"/>.
+        /// </summary>
+        /// <param name="writer">The <see cref="TextWriter"/> to which you want to write. The Touchstone data will be appended to this <see cref="TextWriter"/>.</param>
+        /// <param name="settings">The <see cref="TouchstoneWriterSettings"/> used to configure the <see cref="TouchstoneWriter"/> instance. 
+        /// If <paramref name="settings"/> is null the default settings will be used.</param>
+        /// <returns>A new <see cref="TouchstoneWriter"/> object.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="writer"/> value is null.</exception>
+        public static TouchstoneWriter Create(TextWriter writer, TouchstoneWriterSettings settings)
+        {
+            if (writer == null) throw new ArgumentNullException(nameof(writer));
+            return new TouchstoneWriter(writer, settings);
+        }
+        /// <summary>
+        /// Creates a new <see cref="TouchstoneWriter"/> using the specified <see cref="StringBuilder"/> with default <see cref="TouchstoneWriterSettings"/>.
+        /// </summary>
+        /// <param name="sb">The <see cref="StringBuilder"/> to which you want to write. The Touchstone data will be appended to this <see cref="StringBuilder"/>.</param>
+        /// <returns>A new <see cref="TouchstoneWriter"/> object.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="sb"/> value is null.</exception>
+        public static TouchstoneWriter Create(StringBuilder sb) => Create(sb, new TouchstoneWriterSettings());
+        /// <summary>
+        /// Creates a new <see cref="TouchstoneWriter"/> using the specified <see cref="StringBuilder"/> with default <see cref="TouchstoneWriterSettings"/>.
+        /// </summary>
+        /// <param name="sb">The <see cref="StringBuilder"/> to which you want to write. The Touchstone data will be appended to this <see cref="StringBuilder"/>.</param>
+        /// <param name="settings">The <see cref="TouchstoneWriterSettings"/> used to configure the <see cref="TouchstoneWriter"/> instance. 
+        /// If <paramref name="settings"/> is null the default settings will be used.</param>
+        /// <returns>A new <see cref="TouchstoneWriter"/> object.</returns>
+        /// <exception cref="ArgumentNullException">The <paramref name="sb"/> value is null.</exception>
+        public static TouchstoneWriter Create(StringBuilder sb, TouchstoneWriterSettings settings)
+        {
+            if (sb == null) throw new ArgumentNullException(nameof(sb));
+            StringWriter writer = new StringWriter(sb);
+            return new TouchstoneWriter(writer, settings);
+        }
+        #endregion
+        #region Internal Formatting Functions
         private static string FormatOptions(TouchstoneOptions options)
         {
             StringBuilder sb = new StringBuilder();
@@ -46,18 +122,7 @@ namespace MicrowaveNetworks.Touchstone.IO
 
             return string.Join(" ", OptionChar, frequencyUnit, parameter, format, resistance);
         }
-        private static string FormatComment(string comment)
-        {
-            if (string.IsNullOrEmpty(comment))
-                throw new ArgumentNullException(nameof(comment));
-
-            // If comment spans multiple lines, a comment character is necessary at each line
-            string[] lines = Regex.Split(comment, "[\n\f\r]+");
-
-            // Add the comment character and ensure that it is trimmed if present
-            var commentLines = lines.Select(l => CommentChar + " " + l.Trim(CommentChar, ' '));
-            return string.Join(Environment.NewLine, commentLines);
-        }
+        //private static string FormatKeyword()
         private string FormatColumns(int numberOfPorts)
         {
             List<string> columns = new List<string>();
@@ -103,7 +168,18 @@ namespace MicrowaveNetworks.Touchstone.IO
 
             return string.Join("\t", columns);
         }
+        private static string FormatComment(string comment)
+        {
+            if (string.IsNullOrEmpty(comment))
+                throw new ArgumentNullException(nameof(comment));
 
+            // If comment spans multiple lines, a comment character is necessary at each line
+            string[] lines = Regex.Split(comment, "[\n\f\r]+");
+
+            // Add the comment character and ensure that it is trimmed if present
+            var commentLines = lines.Select(l => CommentChar + " " + l.Trim(CommentChar, ' '));
+            return string.Join(Environment.NewLine, commentLines);
+        }
         private string FormatEntry(double frequency, NetworkParametersMatrix matrix)
         {
             //StringBuilder builder = new StringBuilder();
@@ -147,34 +223,52 @@ namespace MicrowaveNetworks.Touchstone.IO
             string line = string.Join("\t", values).Trim();
             return line;
         }
-        
+        private static Dictionary<string, string> FormatKeywords(TouchstoneKeywords keywords)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+        #region Public Write Functions
+        /// <summary>Writes the <see cref="Options"/> object to the options line in the Touchstone file. If <see cref="TouchstoneKeywords.Version"/> in 
+        /// <see cref="Keywords"/> is <see cref="FileVersion.Two"/>, the keywords will also be written to the file.</summary>
+        /// <remarks>This method may only be called once for a file. If it is not called explicitly, the first call to <see cref="WriteData(double, NetworkParametersMatrix)"/>
+        /// will implicitly call this method.</remarks>
         public void WriteHeader()
         {
-            string options = FormatOptions(Options);
-            Writer.WriteLine(options);
+            if (headerWritten) throw new InvalidOperationException("The header can only be written once.");
+            core = TouchstoneWriterCore.Create(this);
 
-            if (Keywords.Version.HasValue && Keywords.Version.Value == FileVersion.Two)
-            {
-                WriteKeywords();
-            }
+            core.WriteHeader();
+
             headerWritten = true;
         }
+        /// <summary>Asynchronously writes the <see cref="Options"/> object to the options line in the Touchstone file. If <see cref="TouchstoneKeywords.Version"/> in 
+        /// <see cref="Keywords"/> is <see cref="FileVersion.Two"/>, the keywords will also be written to the file.</summary>
+        /// <remarks>This method may only be called once for a file. If it is not called explicitly, the first call to <see cref="WriteDataAsync(double, NetworkParametersMatrix)"/>
+        /// will implicitly call this method.</remarks>
         public async Task WriteHeaderAsync()
         {
-            string options = FormatOptions(Options);
-            await Writer.WriteLineAsync(options);
+            if (headerWritten) throw new InvalidOperationException("The header can only be written once.");
+            core = TouchstoneWriterCore.Create(this);
 
-            if (Keywords.Version.HasValue && Keywords.Version.Value == FileVersion.Two)
-            {
-                WriteKeywords();
-            }
+            await core.WriteHeaderAsync();
+
+            headerWritten = true;
             headerWritten = true;
         }
         private void WriteKeywords()
         {
             throw new NotImplementedException();
         }
-        public void WriteEntry(double frequency, NetworkParametersMatrix matrix)
+        /// <summary>Writes the frequency and <see cref="NetworkParametersMatrix"/> contained in <paramref name="pair"/> to the network data of the file.</summary>
+        /// <param name="pair">The <see cref="NetworkParametersMatrix"/> and corresponding frequency to write to the Touchstone file.</param>
+        /// <remarks>If <see cref="WriteHeader"/> has not yet been called, this method will be called automatically before writing any network data.</remarks>
+        public void WriteData(FrequencyParametersPair pair) => WriteData(pair.Frequency_Hz, pair.Parameters);
+        /// <summary>Writes the frequency and <see cref="NetworkParametersMatrix"/> the network data of the file.</summary>
+        /// <param name="frequency">The frequency of the network data to be written.</param>
+        /// /// <param name="matrix">The network data to be written.</param>
+        /// <remarks>If <see cref="WriteHeader"/> has not yet been called, this method will be called automatically before writing any network data.</remarks>
+        public void WriteData(double frequency, NetworkParametersMatrix matrix)
         {
             if (!headerWritten) WriteHeader();
             if (settings.IncludeColumnNames && !columnsWritten)
@@ -184,13 +278,21 @@ namespace MicrowaveNetworks.Touchstone.IO
                 columnsWritten = true;
             }
             string line = FormatEntry(frequency, matrix);
-            Writer.WriteLine(line);
+            writer.WriteLine(line);
         }
-        public void WriteEntry(FrequencyParametersPair pair) => WriteEntry(pair.Frequency_Hz, pair.Parameters);
-        public async Task WriteEntryAsync(double frequency, NetworkParametersMatrix matrix)
+
+        /// <summary>Asynchronously writes the frequency and <see cref="NetworkParametersMatrix"/> contained in <paramref name="pair"/> to the network data of the file.</summary>
+        /// <param name="pair">The <see cref="NetworkParametersMatrix"/> and corresponding frequency to write to the Touchstone file.</param>
+        /// <remarks>If <see cref="WriteHeaderAsync"/> has not yet been called, this method will be called automatically before writing any network data.</remarks>
+        public async Task WriteDataAsync(FrequencyParametersPair pair) => await WriteDataAsync(pair.Frequency_Hz, pair.Parameters);
+        /// <summary>Asynchronously writes the frequency and <see cref="NetworkParametersMatrix"/> the network data of the file.</summary>
+        /// <param name="frequency">The frequency of the network data to be written.</param>
+        /// /// <param name="matrix">The network data to be written.</param>
+        /// <remarks>If <see cref="WriteHeaderAsync"/> has not yet been called, this method will be called automatically before writing any network data.</remarks>
+        public async Task WriteDataAsync(double frequency, NetworkParametersMatrix matrix)
         {
             if (!headerWritten) await WriteHeaderAsync();
-            
+
             CancelToken.ThrowIfCancellationRequested();
 
             if (settings.IncludeColumnNames && !columnsWritten)
@@ -202,24 +304,27 @@ namespace MicrowaveNetworks.Touchstone.IO
                 CancelToken.ThrowIfCancellationRequested();
             }
             string line = FormatEntry(frequency, matrix);
-            await Writer.WriteLineAsync(line);
+            await writer.WriteLineAsync(line);
         }
-        public async Task WriteEntryAsync(FrequencyParametersPair pair) => await WriteEntryAsync(pair.Frequency_Hz, pair.Parameters);
-
+        /// <summary>Appends a comment line, preceeded with '!', to the Touchstone file.</summary>
+        /// <param name="comment">The comment to be appended. If <paramref name="comment"/> has more than one line, each line will be prepended with the comment character.</param>
         public void WriteCommentLine(string comment)
         {
             string formattedCommment = FormatComment(comment);
-            Writer.WriteLine(formattedCommment);
+            writer.WriteLine(formattedCommment);
         }
+        /// <summary>Asynchronously appends a comment line, preceeded with '!', to the Touchstone file.</summary>
+        /// <param name="comment">The comment to be appended. If <paramref name="comment"/> has more than one line, each line will be prepended with the comment character.</param>
         public async Task WriteCommentLineAsync(string comment)
         {
             string formattedCommment = FormatComment(comment);
-            await Writer.WriteLineAsync(formattedCommment);
+            await writer.WriteLineAsync(formattedCommment);
         }
-
-        public void Flush() => Writer.Flush();
-        public async Task FlushAsync() => await Writer.FlushAsync();
-
+        /// <summary>Invokes <see cref="TextWriter.Flush"/> on the underlying object to clear the buffers and cause all data to be written.</summary>
+        public void Flush() => writer.Flush();
+        /// <summary>Invokes <see cref="TextWriter.FlushAsync"/> on the underlying object to asynchronously clear the buffers and cause all data to be written.</summary>
+        public async Task FlushAsync() => await writer.FlushAsync();
+        #endregion
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
@@ -229,7 +334,12 @@ namespace MicrowaveNetworks.Touchstone.IO
             {
                 if (disposing)
                 {
-                    Writer?.Dispose();
+                    // Specification requires an [End] keyword at the end of the file
+                    if (Keywords.Version == FileVersion.Two)
+                    {
+                        writer?.Write(ControlKeywords.End);
+                    }
+                    writer?.Dispose();
                 }
 
                 disposedValue = true;
@@ -239,6 +349,81 @@ namespace MicrowaveNetworks.Touchstone.IO
         {
             Dispose(true);
         }
+#if NET5_0_OR_GREATER
+        protected async virtual ValueTask DisposeAsyncCore()
+        {
+            if (writer != null)
+            {
+                // Specification requires an [End] keyword at the end of the file
+                if (Keywords.Version == FileVersion.Two)
+                {
+                    await writer.WriteAsync(ControlKeywords.End);
+                }
+                await writer.DisposeAsync();
+            }
+        }
+        public async ValueTask DisposeAsync()
+        {
+            // Perform async cleanup.
+            await DisposeAsyncCore();
+
+            // Dispose of unmanaged resources.
+            Dispose(false);
+        }
+#endif
+        #endregion
+
+        #region Core Classes
+        abstract class TouchstoneWriterCore
+        {
+            protected TouchstoneWriter tsWriter;
+
+            public abstract void WriteHeader();
+            public abstract Task WriteHeaderAsync();
+
+            protected TouchstoneWriterCore(TouchstoneWriter parent) => tsWriter = parent;
+
+            public static TouchstoneWriterCore Create(TouchstoneWriter parent)
+            {
+                switch (parent.Keywords.Version)
+                {
+                    case FileVersion.One:
+                        return new TouchstoneWriterCoreV1(parent);
+                    case FileVersion.Two:
+                        return new TouchstoneWriterCoreV2(parent);
+                    default: throw new NotImplementedException();
+                }
+            }
+        }
+        class TouchstoneWriterCoreV1 : TouchstoneWriterCore
+        {
+            internal TouchstoneWriterCoreV1(TouchstoneWriter parent)
+                : base(parent) { }
+
+            public override void WriteHeader()
+            {
+                string options = FormatOptions(tsWriter.Options);
+                tsWriter.writer.WriteLine(options);
+            }
+            public override async Task WriteHeaderAsync()
+            {
+                string options = FormatOptions(tsWriter.Options);
+                await tsWriter.writer.WriteLineAsync(options);
+            }
+        }
+        class TouchstoneWriterCoreV2 : TouchstoneWriterCoreV1
+        {
+            internal TouchstoneWriterCoreV2(TouchstoneWriter parent)
+                : base(parent) { }
+
+            public override void WriteHeader()
+            {
+                throw new NotImplementedException();
+                base.WriteHeader();
+                tsWriter.writer.WriteLine(ControlKeywords.NetworkData);
+            }
+        }
         #endregion
     }
+
 }

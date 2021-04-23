@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 using System.IO;
 using System.Reflection;
@@ -15,46 +16,67 @@ using MicrowaveNetworks.Matrices;
 
 namespace MicrowaveNetworks.Touchstone.IO
 {
-    public abstract class TouchstoneReader : IDisposable, IEnumerable<FrequencyParametersPair>
+    public sealed class TouchstoneReader : IDisposable, IEnumerable<FrequencyParametersPair>
+
     {
         public TouchstoneKeywords Keywords { get; }
         public TouchstoneOptions Options { get; }
-        public IEnumerable<FrequencyParametersPair> NetworkData => ParseData();
+        //public IEnumerable<FrequencyParametersPair> NetworkData => ParseData();
         public IEnumerator<FrequencyParametersPair> GetEnumerator() => ParseData().GetEnumerator();
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+        public FrequencyParametersPair NetworkData
+        {
+            get
+            {
+                if (currentData.HasValue) return currentData.Value;
+                else
+                {
+                    throw new InvalidOperationException($"Either {nameof(ReadData)} has not been called, or the asynchronous read has not yet completed.");
+                }
+            }
+        }
+
+
         private static FieldNameLookup<TouchstoneKeywords> keywordLookup = new FieldNameLookup<TouchstoneKeywords>();
-        private static FieldNameLookup<FrequencyUnit> frequencyUnitLookup = new FieldNameLookup<FrequencyUnit>();
-        private static FieldNameLookup<ParameterType> parameterTypeLookup = new FieldNameLookup<ParameterType>();
-        private static FieldNameLookup<FormatType> formatTypeLookup = new FieldNameLookup<FormatType>();
-        private static Lazy<string> resistanceSignifier = new Lazy<string>(()
-            => GetTouchstoneFieldName<TouchstoneOptions>(nameof(TouchstoneOptions.Resistance)));
-        private static Lazy<string> referenceKeywordName = new Lazy<string>(()
-            => GetTouchstoneFieldName<TouchstoneKeywords>(nameof(TouchstoneKeywords.Reference)));
+        private static string resistanceSignifier = GetTouchstoneFieldName<TouchstoneOptions>(nameof(TouchstoneOptions.Resistance));
+        private static string referenceKeywordName = GetTouchstoneFieldName<TouchstoneKeywords>(nameof(TouchstoneKeywords.Reference));
 
 
         private TextReader reader;
         private TouchstoneReaderSettings settings;
-        //private Touchstone file;
         private int lineNumber;
+        private FrequencyParametersPair? currentData;
+        private int? numPorts;
+        private int numLinesToRead;
 
-        protected TouchstoneReader(TouchstoneReaderSettings settings)
+        string previewedLine;
+
+        private TouchstoneReader(TextReader reader, TouchstoneReaderSettings settings)
         {
-            this.settings = settings;
+            this.settings = settings ?? new TouchstoneReaderSettings();
+            this.reader = reader;
             Options = new TouchstoneOptions();
             Keywords = new TouchstoneKeywords();
         }
-        private string StripTrailingComment(string line)
+        #region Constructors
+        public static TouchstoneReader Create(string filePath) => Create(filePath, new TouchstoneReaderSettings());
+        public static TouchstoneReader Create(string filePath, TouchstoneReaderSettings settings)
         {
-            int index = line.IndexOf(Constants.CommentChar);
-            if (index >= 0)
-            {
-                return line.Substring(0, index);
-            }
-            else return line;
+            if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException(nameof(filePath));
+            StreamReader reader = new StreamReader(filePath);
+            return new TouchstoneReader(reader, settings);
         }
+        public static TouchstoneReader Create(TextReader reader) => Create(reader, new TouchstoneReaderSettings());
+        public static TouchstoneReader Create(TextReader reader, TouchstoneReaderSettings settings)
+        {
+            if (reader == null) throw new ArgumentNullException(nameof(reader));
+            return new TouchstoneReader(reader, settings);
+        }
+        #endregion
+
         #region Header Parsing
-        protected void ParseToData(TextReader reader)
+        protected void ReadToNetworkData()
         {
             this.reader = reader;
             if (reader == null) throw new ArgumentNullException(nameof(reader));
@@ -90,6 +112,7 @@ namespace MicrowaveNetworks.Touchstone.IO
                 }
             }
             // Either EOF or first data line reached. TextReader is now in the position to read the next line on the next call.
+            //DetermineNumberOfPorts();
         }
         private void ParseKeyword(string line)
         {
@@ -122,7 +145,7 @@ namespace MicrowaveNetworks.Touchstone.IO
             }
             // If the second group wasn't found above but this keyword is the [Reference] keyword, try loading the next line expecting the 
             // reference data.
-            else if (match.Groups[1].Value == referenceKeywordName.Value)
+            else if (match.Groups[1].Value == referenceKeywordName)
             {
                 throw new NotImplementedException();
             }
@@ -142,7 +165,7 @@ namespace MicrowaveNetworks.Touchstone.IO
             {
                 while (enumer.MoveNext())
                 {
-                     string option = enumer.Current;
+                    string option = enumer.Current;
                     // Format specifies that options can occur in any order
                     if (TouchstoneEnumMap<FrequencyUnit>.ValidTouchstoneName(option))
                     {
@@ -157,7 +180,7 @@ namespace MicrowaveNetworks.Touchstone.IO
                     {
                         Options.Parameter = TouchstoneEnumMap<ParameterType>.FromTouchstoneValue(option);
                     }
-                    else if (option == resistanceSignifier.Value)
+                    else if (option == resistanceSignifier)
                     {
                         // For resistance, this option is specified in the format of "R [value]"
                         // Hence, we need to actually move the enumerator forward to get the value
@@ -180,23 +203,124 @@ namespace MicrowaveNetworks.Touchstone.IO
             }
         }
         #endregion
-        #region Data Parsing
-#if NETSTANDARDALL
-                private async IAsyncEnumerable<FrequencyParametersPair> ParseDataAsync([EnumeratorCancellation] CancellationToken token = default)
-                {
-                    string line;
-                    while ((line = await reader.ReadLineAsync()) != null)
-                    {
-                        line = line.Trim();
-                        if (line[0] == Constants.CommentChar) continue;
 
-                        (bool matchedPredicate, FrequencyParametersPair pair) = ParseLine(line, token);
-                        if (matchedPredicate)
-                        {
-                            yield return pair;
-                        }
+        private void DetermineNumberOfPorts()
+        { }
+
+
+        public bool ReadData()
+        {
+            List<string> lines = new List<string>(numLinesToRead);
+            if (previewedLine != null) lines.Add(previewedLine);
+
+            if (!numPorts.HasValue)
+            {
+                if (Keywords.Version == FileVersion.Two) numPorts = Keywords.NumberOfPorts;
+                else
+                {
+                    string currentLine, nextLine;
+                    currentLine = ReadNextDataLine();
+                    nextLine = ReadNextDataLine();
+                    int numColumnsCurrent = TrimAndSplitLine(currentLine).Count;
+                    int numColumnsNext = TrimAndSplitLine(currentLine).Count;
+
+                    if (numColumnsCurrent == numColumnsNext)
+                    {
+                        numPorts = (int)Math.Sqrt((numColumnsCurrent - 1) / 2);
+                        lines.Add(currentLine);
+                        previewedLine = nextLine;
                     }
+                    else
+                    {
+                        numPorts = (numColumnsCurrent - 1) / 2;
+                        lines.Add(currentLine);
+                        lines.Add(nextLine);
+                    }
+
                 }
+                // For two or 1 port files, we only have a single line containing all the data.
+                // But for n-port networks, data will span multiple lines
+                numLinesToRead = numPorts <= 2 ? 1 : (int)numPorts;
+            }
+
+            string line;
+            while ((line = ReadNextDataLine()) != null && lines.Count < numLinesToRead)
+            {
+                lines.Add(line);
+            }
+
+            // Make sure we read the expected number of lines rather than reaching EOF
+            if (lines.Count == numLinesToRead)
+            {
+                (bool matchedPredicate, FrequencyParametersPair pair) = ParseLines(lines);
+                if (matchedPredicate)
+                {
+                    currentData = pair;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private string ReadNextDataLine()
+        {
+            string line;
+            while ((line = reader.ReadLine()) != null)
+            {
+                line = line.Trim();
+                if (line[0] == Constants.CommentChar) continue;
+            }
+            return line;
+        }
+        private async Task<string> ReadNextDataLineAsync()
+        {
+            string line;
+            while ((line = await reader.ReadLineAsync()) != null)
+            {
+                line = line.Trim();
+                if (line[0] == Constants.CommentChar) continue;
+            }
+            return line;
+        }
+
+        public async Task<bool> ReadDataAsync()
+        {
+            string line;
+            while ((line = await reader.ReadLineAsync()) != null)
+            {
+                line = line.Trim();
+                if (line[0] == Constants.CommentChar) continue;
+
+                (bool matchedPredicate, FrequencyParametersPair pair) = ParseLine(line);
+                if (matchedPredicate)
+                {
+                    currentData = pair;
+                    return true;
+                }
+                else continue;
+            }
+            return false;
+        }
+
+
+        #region Data Parsing
+        /*
+#if NET5_0_OR_GREATER
+        private async IAsyncEnumerable<FrequencyParametersPair> ParseDataAsync([EnumeratorCancellation] CancellationToken token = default)
+        {
+            string line;
+            while ((line = await reader.ReadLineAsync()) != null)
+            {
+                line = line.Trim();
+                if (line[0] == Constants.CommentChar) continue;
+
+                (bool matchedPredicate, FrequencyParametersPair pair) = ParseLine(line, token);
+                if (matchedPredicate)
+                {
+                    yield return pair;
+                }
+            }
+        }
 #endif
 
         private IEnumerable<FrequencyParametersPair> ParseData()
@@ -213,24 +337,134 @@ namespace MicrowaveNetworks.Touchstone.IO
                     yield return pair;
                 }
             }
-        }
-        private (bool, FrequencyParametersPair) ParseLine(string line, CancellationToken cancelToken = default)
+        }*/
+        private (bool, FrequencyParametersPair) ParseLines(List<string> lines, CancellationToken cancelToken = default)
         {
             FrequencyParametersPair pair = default;
-            bool matchedPredicate = false;
+            double frequency = 0;
+            bool selected = false;
 
-            // Remove any trailing comments and any leading or trailing whitespace
-            line = StripTrailingComment(line);
-            line = line.Trim();
-            
-            string[] data = Regex.Split(line, @"\s");
+            List<NetworkParameter> parameters = new List<NetworkParameter>();
+
+            // Loop through multiple lines for matrices of order 3 and greater
+            for (int i = 0; i < lines.Count; i++)
+            {
+                string currentLine = lines[i];
+                List<string> data = TrimAndSplitLine(currentLine);
+
+                // The first line will always include the frequency
+                if (i == 0)
+                {
+                    string frequencyString = data[0];
+
+                    (selected, frequency) = ProcessFrequency(frequencyString);
+                    if (!selected) break;
+
+                    data.RemoveAt(0);
+                }
+                parameters.AddRange(ProcessParameters(data, cancelToken));
+
+            }
+            if (selected)
+            {
+                ListFormat format = ListFormat.SourcePortMajor;
+                if (Keywords.Version == FileVersion.Two && Keywords.NumberOfPorts == 2 && Keywords.TwoPortDataOrder.HasValue)
+                {
+                    if (Keywords.TwoPortDataOrder.Value == TwoPortDataOrderConfig.TwoOne_OneTwo)
+                        format = ListFormat.DestinationPortMajor;
+                }
+
+                cancelToken.ThrowIfCancellationRequested();
+
+                ScatteringParametersMatrix matrix = new ScatteringParametersMatrix(parameters, format);
+                pair = new FrequencyParametersPair(frequency, matrix);
+            }
+
+
+            return (selected, pair);
+        }
+
+        private List<NetworkParameter> ProcessParameters(List<string> data, CancellationToken cancelToken)
+        {
+            List<NetworkParameter> parameters = new List<NetworkParameter>();
+            int dataLength = data.Count / 2;
+
+            if (!dataLength.IsPerfectSquare(out int ports))
+                ThrowHelper("Data", "Invalid data format");
+
+            cancelToken.ThrowIfCancellationRequested();
+
+            if (settings.ParameterSelector != null)
+                throw new NotImplementedException();
+
+            for (int j = 1; j < data.Count; j += 2)
+            {
+                double val1 = 0, val2 = 0;
+                try
+                {
+                    val1 = double.Parse(data[j]);
+                    val2 = double.Parse(data[j + 1]);
+                }
+                catch (FormatException)
+                {
+                    ThrowHelper("Data", "Invalid data format");
+                }
+                NetworkParameter param = new NetworkParameter();
+                switch (Options.Format)
+                {
+                    case FormatType.DecibelAngle:
+                        param = NetworkParameter.FromPolarDecibelDegree(val1, val2);
+                        break;
+                    case FormatType.MagnitudeAngle:
+                        param = NetworkParameter.FromPolarDegree(val1, val2);
+                        break;
+                    case FormatType.RealImaginary:
+                        param = new NetworkParameter(val1, val2);
+                        break;
+                }
+                parameters.Add(param);
+            }
+            return parameters;
+        }
+
+        private (bool Selected, double Frequency) ProcessFrequency(string frequencyString)
+        {
+            (bool Selected, double Frequency) result;
+            bool success = double.TryParse(frequencyString, out double frequency);
+            if (!success) ThrowHelper("Data", "Invalid format for frequency");
+
+            frequency *= Options.FrequencyUnit.GetMultiplier();
+            bool selectedFrequency = true;
+
+            if (settings.FrequencySelector != null)
+            {
+                try
+                {
+                    selectedFrequency = settings.FrequencySelector(frequency);
+                }
+                catch
+                {
+                    // Assume any exception means we should not use this frequency
+                    selectedFrequency = false;
+                }
+            }
+            result = (selectedFrequency, frequency);
+            return result;
+        }
+
+        /*
+        private (bool, FrequencyParametersPair) ParseLine(string line, CancellationToken cancelToken = default)
+        {
+
+
+
 
             // # TODO: Support n port files
 
             // Exclude the first element (frequency) and divide by two since there should be two values per port
             int adjustedDataLength = (data.Length - 1) / 2;
 
-            if (!adjustedDataLength.IsPerfectSquare(out int ports)) 
+            if (!adjustedDataLength.IsPerfectSquare(out int ports))
                 ThrowHelper("Data", "Invalid data format");
 
             bool success = double.TryParse(data[0], out double frequency);
@@ -306,12 +540,16 @@ namespace MicrowaveNetworks.Touchstone.IO
 
             return (matchedPredicate, pair);
         }
-        #endregion
+        */
+        private static List<string> TrimAndSplitLine(string line)
+        {
+            // Remove any trailing comments and any leading or trailing whitespace
+            line = StripTrailingComment(line).Trim();
 
-        public static TouchstoneReader CreateWithFile(string filePath) => CreateWithFile(filePath, new TouchstoneReaderSettings());
-        public static TouchstoneReader CreateWithFile(string filePath, TouchstoneReaderSettings settings) => new TouchstoneFileReader(filePath, settings);
-        public static TouchstoneReader CreateWithString(string fileText) => CreateWithString(fileText, new TouchstoneReaderSettings());
-        public static TouchstoneReader CreateWithString(string fileText, TouchstoneReaderSettings settings) => new TouchstoneStringReader(fileText, settings);
+            string[] data = Regex.Split(line, @"\s");
+            return new List<string>(data);
+        }
+        #endregion
 
 
         #region Utilities
@@ -321,7 +559,15 @@ namespace MicrowaveNetworks.Touchstone.IO
             var attr = f.GetCustomAttribute<TouchstoneParameterAttribute>();
             return attr.FieldName;
         }
-
+        private static string StripTrailingComment(string line)
+        {
+            int index = line.IndexOf(Constants.CommentChar);
+            if (index >= 0)
+            {
+                return line.Substring(0, index);
+            }
+            else return line;
+        }
         private void ThrowHelper(string sectionName, string extraMessage = null, Exception inner = null)
         {
             string message = $"Invalid data format parsing section {sectionName} at line {lineNumber}.";
@@ -340,7 +586,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
-        protected virtual void Dispose(bool disposing)
+        protected void Dispose(bool disposing)
         {
             if (!disposedValue)
             {

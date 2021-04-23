@@ -7,6 +7,9 @@ using System.Globalization;
 
 namespace MicrowaveNetworks.Touchstone.IO
 {
+    /// <summary>
+    /// Defines additional formmatting options to use when creating the Touchstone file.
+    /// </summary>
     public class TouchstoneWriterSettings
     {
         public bool IncludeColumnNames = true;

@@ -2,11 +2,8 @@
 using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
-using System.Text;
 using MicrowaveNetworks.Matrices;
 using MicrowaveNetworks.Touchstone.IO;
-using MicrowaveNetworks.Internal;
-using System.Threading.Tasks;
 
 namespace MicrowaveNetworks
 {
