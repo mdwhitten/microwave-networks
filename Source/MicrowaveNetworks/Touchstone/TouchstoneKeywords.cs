@@ -16,7 +16,7 @@ namespace MicrowaveNetworks.Touchstone
         /// <remarks>This value is ignored when saving data from a <see cref="TouchstoneFile"/> object since <see cref="TouchstoneFile.NetworkParameters"/>
         /// already defines the number of ports represented in the file.</remarks>
         [TouchstoneKeyword("Number of Ports")]
-        public int NumberOfPorts;
+        public int? NumberOfPorts;
         /// <summary>Signifies the column ordering convention for two-port network data.</summary>
         [TouchstoneKeyword("Two-Port Data Order")]
         public TwoPortDataOrderConfig? TwoPortDataOrder;

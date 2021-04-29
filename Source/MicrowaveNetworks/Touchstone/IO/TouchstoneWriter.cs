@@ -15,7 +15,7 @@ namespace MicrowaveNetworks.Touchstone.IO
     /// <summary>
     /// Provides lower-level support for rendering Touchstone files from network data and Touchstone options and keywords.
     /// </summary>
-    public class TouchstoneWriter : IDisposable
+    public sealed class TouchstoneWriter : IDisposable
 #if NET5_0_OR_GREATER
                                     , IAsyncDisposable
 #endif
@@ -125,12 +125,17 @@ namespace MicrowaveNetworks.Touchstone.IO
         //private static string FormatKeyword()
         private string FormatColumns(int numberOfPorts)
         {
-            List<string> columns = new List<string>();
+            ListFormat format = core.GetListFormat(numberOfPorts);
 
-            string frequencyUnit = $"Frequency ({Options.FrequencyUnit})";
-            frequencyUnit = frequencyUnit.PadRight(settings.ColumnWidth - 2);
+            string frequencyDescription = $"Frequency ({Options.FrequencyUnit})";
+            string columnPad = string.Empty;
+            if (settings.UnifiedColumnWidth)
+            {
+                frequencyDescription = frequencyDescription.PadRight(settings.ColumnWidth - 2);
+                columnPad = columnPad.PadRight(settings.ColumnWidth - 2);
+            }
 
-            columns.Add(frequencyUnit);
+            //columns.Add(frequencyUnit);
 
             string parameter = TouchstoneEnumMap<ParameterType>.ToTouchstoneValue(Options.Parameter);
             string description1 = null, description2 = null;
@@ -150,23 +155,31 @@ namespace MicrowaveNetworks.Touchstone.IO
                     break;
             }
 
-            int leftPad = (int)Math.Floor(settings.ColumnWidth / 2.0);
-            int rightPad = (int)Math.Ceiling(settings.ColumnWidth / 2.0);
+            /*int leftPad = (int)Math.Floor(settings.ColumnWidth / 2.0);
+            int rightPad = (int)Math.Ceiling(settings.ColumnWidth / 2.0);*/
 
-            var result = ForEachParameter(numberOfPorts, indices =>
+            List<string> parameterDescriptions = new List<string>();
+
+            ForEachParameter(numberOfPorts, format, indices =>
             {
                 (int dest, int source) = indices;
+
                 string column1 = $"{parameter}{dest}{source}:{description1}";
                 string column2 = $"{parameter}{dest}{source}:{description2}";
 
-                column1 = column1.PadRight(settings.ColumnWidth);
-                column2 = column2.PadRight(settings.ColumnWidth);
-                return column1 + "\t" + column2;
+                if (settings.UnifiedColumnWidth)
+                {
+                    column1 = column1.PadRight(settings.ColumnWidth);
+                    column2 = column2.PadRight(settings.ColumnWidth);
+                }
+
+                parameterDescriptions.Add(column1);
+                parameterDescriptions.Add(column2);
             });
 
-            columns.AddRange(result);
+            string formattedColumns = FormatMatrix(frequencyDescription, columnPad, parameterDescriptions, numberOfPorts);
 
-            return string.Join("\t", columns);
+            return formattedColumns;
         }
         private static string FormatComment(string comment)
         {
@@ -177,12 +190,11 @@ namespace MicrowaveNetworks.Touchstone.IO
             string[] lines = Regex.Split(comment, "[\n\f\r]+");
 
             // Add the comment character and ensure that it is trimmed if present
-            var commentLines = lines.Select(l => CommentChar + " " + l.Trim(CommentChar, ' '));
+            var commentLines = lines.Select(l => CommentChar + " " + l.Trim(CommentChar));
             return string.Join(Environment.NewLine, commentLines);
         }
         private string FormatEntry(double frequency, NetworkParametersMatrix matrix)
         {
-            //StringBuilder builder = new StringBuilder();
             string formatString = settings.NumericFormatString;
             if (string.IsNullOrEmpty(settings.NumericFormatString))
             {
@@ -190,39 +202,85 @@ namespace MicrowaveNetworks.Touchstone.IO
             }
             IFormatProvider provider = settings.NumericFormatProvider ?? CultureInfo.CurrentCulture.NumberFormat;
 
+            string width = string.Empty, frequencyWidth = string.Empty;
+            string columnPad = string.Empty;
+            if (settings.UnifiedColumnWidth)
+            {
+                width = settings.ColumnWidth + ":";
+                frequencyWidth = -settings.ColumnWidth + ":";
+                columnPad = string.Empty.PadRight(settings.ColumnWidth);
+            }
+            string compositeFormatString = $"{{0,{width}{formatString}}}";
+            string frequencyCompositeString = $"{{0,{frequencyWidth}{formatString}}}";
+
+            int numPorts = matrix.NumPorts;
+            ListFormat format = core.GetListFormat(numPorts);
+
+            List<double> parameters = new List<double>();
+
+            // Prepare frequency
             double scaledFrequency = frequency / Options.FrequencyUnit.GetMultiplier();
-            //string frequencyStr = scaledFrequency.ToString(formatString, provider);
-            //builder.Append(frequen)
 
-            List<double> numbersToFormat = new List<double>();
-            numbersToFormat.Add(scaledFrequency);
-
-            foreach (var (_, parameter) in matrix)
+            foreach (var (_, parameter) in matrix.EnumerateParameters(format))
             {
                 switch (Options.Format)
                 {
                     case FormatType.DecibelAngle:
-                        numbersToFormat.Add(parameter.Magnitude_dB);
-                        numbersToFormat.Add(parameter.Phase_deg);
+                        parameters.Add(parameter.Magnitude_dB);
+                        parameters.Add(parameter.Phase_deg);
                         break;
                     case FormatType.MagnitudeAngle:
-                        numbersToFormat.Add(parameter.Magnitude);
-                        numbersToFormat.Add(parameter.Phase_deg);
+                        parameters.Add(parameter.Magnitude);
+                        parameters.Add(parameter.Phase_deg);
                         break;
                     case FormatType.RealImaginary:
-                        numbersToFormat.Add(parameter.Real);
-                        numbersToFormat.Add(parameter.Imaginary);
+                        parameters.Add(parameter.Real);
+                        parameters.Add(parameter.Imaginary);
                         break;
                 }
             }
-            string width = string.Empty;
-            if (settings.UnifiedColumnWidth) width = settings.ColumnWidth + ":";
-            string compositeFormatString = $"{{0,{width}{formatString}}}";
-            var values = numbersToFormat.Select(d => string.Format(compositeFormatString, d));
 
-            string line = string.Join("\t", values).Trim();
-            return line;
+            string frequencyString = string.Format(settings.NumericFormatProvider, frequencyCompositeString, scaledFrequency);
+            var parametersString = parameters.Select(p => string.Format(settings.NumericFormatProvider, compositeFormatString, p));
+
+            string formattedEntry = FormatMatrix(frequencyString, columnPad, parametersString, numPorts);
+
+            return formattedEntry;
         }
+        private string FormatMatrix(string firstValue, string spaceValue, IEnumerable<string> entries, int numPorts)
+        {
+            int maxDataPairs = core.GetNumberOfDataPairsPerLine(numPorts);
+            int maxNumColumns = (maxDataPairs * 2) + 1;
+
+            ListFormat format = core.GetListFormat(numPorts);
+            StringBuilder sb = new StringBuilder(firstValue);
+            int previousDestinationPort = 1;
+            int currentColumn = 1;
+
+            using var enumer = entries.GetEnumerator();
+
+            ForEachParameter(numPorts, format, index =>
+            {
+                if (currentColumn == maxNumColumns ||
+                            (numPorts > 2 && index.DestinationPort > previousDestinationPort))
+                {
+                    sb.AppendLine();
+                    sb.Append(spaceValue);
+                    currentColumn = 1;
+                    previousDestinationPort = index.DestinationPort;
+                }
+
+                enumer.MoveNext();
+                sb.Append('\t');
+                sb.Append(enumer.Current);
+                enumer.MoveNext();
+                sb.Append('\t');
+                sb.Append(enumer.Current);
+                currentColumn += 2;
+            });
+            return sb.ToString();
+        }
+
         private static Dictionary<string, string> FormatKeywords(TouchstoneKeywords keywords)
         {
             throw new NotImplementedException();
@@ -328,7 +386,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (!disposedValue)
             {
@@ -345,12 +403,15 @@ namespace MicrowaveNetworks.Touchstone.IO
                 disposedValue = true;
             }
         }
+        /// <summary>
+        /// Disposes the underlying <see cref="TextWriter"/> object.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
         }
 #if NET5_0_OR_GREATER
-        protected async virtual ValueTask DisposeAsyncCore()
+        private async ValueTask DisposeAsyncCore()
         {
             if (writer != null)
             {
@@ -362,6 +423,9 @@ namespace MicrowaveNetworks.Touchstone.IO
                 await writer.DisposeAsync();
             }
         }
+        /// <summary>
+        /// Asynchronously disposes the underlying <see cref="TextWriter"/> object.
+        /// </summary>
         public async ValueTask DisposeAsync()
         {
             // Perform async cleanup.
@@ -378,6 +442,17 @@ namespace MicrowaveNetworks.Touchstone.IO
         {
             protected TouchstoneWriter tsWriter;
 
+            public virtual int GetNumberOfDataPairsPerLine(int numPorts)
+            {
+                if (numPorts <= 2)
+                {
+                    return 4;
+                }
+                else return numPorts;
+            }
+
+            public abstract ListFormat GetListFormat(int numPorts);
+
             public abstract void WriteHeader();
             public abstract Task WriteHeaderAsync();
 
@@ -385,20 +460,27 @@ namespace MicrowaveNetworks.Touchstone.IO
 
             public static TouchstoneWriterCore Create(TouchstoneWriter parent)
             {
-                switch (parent.Keywords.Version)
+                return parent.Keywords.Version switch
                 {
-                    case FileVersion.One:
-                        return new TouchstoneWriterCoreV1(parent);
-                    case FileVersion.Two:
-                        return new TouchstoneWriterCoreV2(parent);
-                    default: throw new NotImplementedException();
-                }
+                    FileVersion.One => new TouchstoneWriterCoreV1(parent),
+                    FileVersion.Two => new TouchstoneWriterCoreV2(parent),
+                    _ => throw new NotImplementedException(),
+                };
             }
         }
         class TouchstoneWriterCoreV1 : TouchstoneWriterCore
         {
             internal TouchstoneWriterCoreV1(TouchstoneWriter parent)
                 : base(parent) { }
+
+            private const int MaximumDataPairsPerLine = 4;
+
+            public override int GetNumberOfDataPairsPerLine(int numPorts)
+            {
+                int pairs = base.GetNumberOfDataPairsPerLine(numPorts);
+                if (pairs > MaximumDataPairsPerLine) pairs = MaximumDataPairsPerLine;
+                return pairs;
+            }
 
             public override void WriteHeader()
             {
@@ -410,12 +492,32 @@ namespace MicrowaveNetworks.Touchstone.IO
                 string options = FormatOptions(tsWriter.Options);
                 await tsWriter.writer.WriteLineAsync(options);
             }
+
+            public override ListFormat GetListFormat(int numPorts)
+            {
+                if (numPorts <= 2) return ListFormat.SourcePortMajor;
+                else return ListFormat.DestinationPortMajor;
+            }
         }
         class TouchstoneWriterCoreV2 : TouchstoneWriterCoreV1
         {
             internal TouchstoneWriterCoreV2(TouchstoneWriter parent)
                 : base(parent) { }
-
+            public override ListFormat GetListFormat(int numPorts)
+            {
+                if (numPorts == 2)
+                {
+                    TwoPortDataOrderConfig config = tsWriter.Keywords.TwoPortDataOrder ??
+                                                                TwoPortDataOrderConfig.TwoOne_OneTwo;
+                    return config switch
+                    {
+                        TwoPortDataOrderConfig.OneTwo_TwoOne => ListFormat.DestinationPortMajor,
+                        TwoPortDataOrderConfig.TwoOne_OneTwo => ListFormat.SourcePortMajor,
+                        _ => throw new NotImplementedException(),
+                    };
+                }
+                else return ListFormat.DestinationPortMajor;
+            }
             public override void WriteHeader()
             {
                 throw new NotImplementedException();

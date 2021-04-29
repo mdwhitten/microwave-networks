@@ -75,11 +75,11 @@ namespace MicrowaveNetworks
         /// Creates a new <see cref="NetworkParametersMatrix"/> with the specified number of ports.
         /// </summary>
         /// <param name="numPorts">The numer of ports of the device represented by this matrix.</param>
-        public NetworkParametersMatrix(int numPorts)
+        protected NetworkParametersMatrix(int numPorts)
         {
             NumPorts = numPorts;
             //parametersMatrix = new Dictionary<(int destPort, int sourcePort), NetworkParameter>(m_size);
-            matrix = DenseMatrix.Create(numPorts, numPorts, Complex.Zero);
+            matrix = DenseMatrix.Create(numPorts, numPorts, Complex.One);
         }
         /// <summary>
         /// Creates a new <see cref="NetworkParametersMatrix"/> from a flattened list of <see cref="NetworkParameter"/> structures.
@@ -90,7 +90,7 @@ namespace MicrowaveNetworks
         /// must be n^2, where n is the number of ports of the device. <see cref="NumPorts"/> will be set to n.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="flattenedList"/> is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if the number of elements in <paramref name="flattenedList"/> is not a perfect square.</exception>
-        public NetworkParametersMatrix(IList<NetworkParameter> flattenedList)
+        protected NetworkParametersMatrix(IList<NetworkParameter> flattenedList)
         {
             CreateFromFlattenedList(flattenedList, ListFormat.SourcePortMajor);
         }
@@ -104,7 +104,7 @@ namespace MicrowaveNetworks
         /// <param name="format">The format to be used for interperting the which element in the flat list correspods to the appropriate matrix index.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="flattenedList"/> is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">Thrown if the number of elements in <paramref name="flattenedList"/> is not a perfect square.</exception>
-        public NetworkParametersMatrix(IList<NetworkParameter> flattenedList, ListFormat format)
+        protected NetworkParametersMatrix(IList<NetworkParameter> flattenedList, ListFormat format)
         {
             CreateFromFlattenedList(flattenedList, format);
         }
@@ -177,13 +177,21 @@ namespace MicrowaveNetworks
         /// <returns>An enumerator for the matrix in the specified format.</returns>
         public IEnumerator<PortNetworkParameterPair> GetEnumerator(ListFormat format)
         {
-            var parameters = Utilities.ForEachParameter(NumPorts, format, index => 
-                                    new PortNetworkParameterPair(index, this[index.DestinationPort, index.SourcePort]));
-            return parameters.GetEnumerator();
+            return EnumerateParameters(format).GetEnumerator();
         }
         IEnumerator IEnumerable.GetEnumerator()
         {
             return GetEnumerator();
+        }
+        /// <summary>
+        /// Enumerates the parameters in the matrix based on the specified format.
+        /// </summary>
+        /// <param name="format">The <see cref="ListFormat"/> defining what order the parameters should be returned in./</param>
+        /// <returns>A sequence of <see cref="PortNetworkParameterPair"/> values.</returns>
+        public IEnumerable<PortNetworkParameterPair> EnumerateParameters(ListFormat format = ListFormat.DestinationPortMajor)
+        {
+            return Utilities.ForEachParameter(NumPorts, format, index =>
+                                    new PortNetworkParameterPair(index, this[index.DestinationPort, index.SourcePort]));
         }
         public override string ToString()
         {
@@ -193,11 +201,11 @@ namespace MicrowaveNetworks
                 (int dest, int source) = index;
 
                 // When row starts, add a new '['
-                if (source == 1) sb.Append("[");
+                if (source == 1) sb.Append('[');
                 sb.Append($"S{dest}{source}: {this[dest, source]}");
                 // End of row - start the next
                 if (source == NumPorts) sb.AppendLine("]");
-                else sb.Append("\t");
+                else sb.Append('\t');
 
             });
             return sb.ToString();

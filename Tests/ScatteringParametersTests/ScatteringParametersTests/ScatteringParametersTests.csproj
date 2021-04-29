@@ -60,8 +60,8 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Source\Touchstone\MicrowaveNetworks.csproj">
-      <Project>{fb684e96-e3ba-46f4-9a55-ea8a5eb2c76c}</Project>
+    <ProjectReference Include="..\..\..\Source\MicrowaveNetworks\MicrowaveNetworks.csproj">
+      <Project>{5e18c6b7-e2c7-4a4a-99b0-2871b10b107a}</Project>
       <Name>MicrowaveNetworks</Name>
     </ProjectReference>
   </ItemGroup>

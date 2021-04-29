@@ -20,6 +20,6 @@
         public static readonly string NoiseData = "Noise Data".FormatKeyword();
         public static readonly string End = "End".FormatKeyword();
 
-        public static readonly TouchstoneKeyword BeginInfo;
+        //public static readonly TouchstoneKeyword BeginInfo;
     }
 }

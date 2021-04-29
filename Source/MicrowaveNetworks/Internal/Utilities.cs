@@ -52,13 +52,11 @@ namespace MicrowaveNetworks.Internal
         }
         public static Type ToNetworkParameterMatrixType(this ParameterType p)
         {
-            switch (p)
+            return p switch
             {
-                case ParameterType.Scattering:
-                    return typeof(ScatteringParametersMatrix);
-                default:
-                    throw new NotImplementedException();
-            }
+                ParameterType.Scattering => typeof(ScatteringParametersMatrix),
+                _ => throw new NotImplementedException($"Support for parameter type {p} has not been implemented."),
+            };
         }
     }
 }

@@ -1,17 +1,20 @@
 ﻿using MathNet.Numerics.LinearAlgebra.Complex;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace MicrowaveNetworks.Matrices
 {
     using SymmetryExtension;
+
+    /// <summary>
+    /// Represents the transfer (T) parameters between device ports.
+    /// </summary>
     public sealed class TransferParametersMatrix : NetworkParametersMatrix
     {
         private TransferParametersMatrix(int numPorts, DenseMatrix matrix)
             : base(numPorts, matrix) { }
+
+        /// <summary>
+        /// Creates a new <see cref="TransferParametersMatrix"/> with the specified number of ports.
+        /// </summary>
         public TransferParametersMatrix(int numPorts) : base(numPorts) { }
 
         internal TransferParametersMatrix(SymmetryMatrix symmetryMatrix)

@@ -27,10 +27,10 @@ namespace ScatteringParametersTests
         {
             ScatteringParametersMatrix sm = new ScatteringParametersMatrix(3);
 
-            FluentActions.Invoking(() => sm[3, 0]).Should().Throw<ArgumentOutOfRangeException>();
-            FluentActions.Invoking(() => sm[0, 3]).Should().Throw<ArgumentOutOfRangeException>();
-            FluentActions.Invoking(() => sm[1, 4]).Should().Throw<ArgumentOutOfRangeException>();
-            FluentActions.Invoking(() => sm[4, 1]).Should().Throw<ArgumentOutOfRangeException>();
+            FluentActions.Invoking(() => sm[3, 0]).Should().Throw<IndexOutOfRangeException>();
+            FluentActions.Invoking(() => sm[0, 3]).Should().Throw<IndexOutOfRangeException>();
+            FluentActions.Invoking(() => sm[1, 4]).Should().Throw<IndexOutOfRangeException>();
+            FluentActions.Invoking(() => sm[4, 1]).Should().Throw<IndexOutOfRangeException>();
 
             for (int i = 1; i <= 3; i++)
             {
