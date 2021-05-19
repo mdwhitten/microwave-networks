@@ -18,9 +18,9 @@ namespace MicrowaveNetworks.Touchstone
     /// </summary>
     /// <remarks>Use this class when writing to a Touchstone file for complete control of the final output, or when making in-memory modifications/round-trip edits to an existing file.
     /// If only the network data is needed from the file, you can use the <see cref="ReadAllData(string)"/> function to quickly access the data. Alternatively, you
-    /// can use the low-level functions defined in <see cref="Touchstone.IO"/> for more complete control over file processing.
+    /// can use the low-level functions defined in <see cref="MicrowaveNetworks.Touchstone.IO"/> for more complete control over file processing.
     /// <para></para>See the specification defined at http://ibis.org/touchstone_ver2.0/touchstone_ver2_0.pdf for more information.</remarks>
-    public class TouchstoneFile
+    public class Touchstone
     {
         /// <summary>
         /// Gets or sets the <see cref="TouchstoneOptions"/> present in the Touchstone file.
@@ -38,12 +38,12 @@ namespace MicrowaveNetworks.Touchstone
         public INetworkParametersCollection NetworkParameters { get; set; }
 
         #region Constructors
-        internal TouchstoneFile() { }
+        internal Touchstone() { }
 
-        /// <summary>Creates a new empty <see cref="TouchstoneFile"/> with a the specified ports and options.</summary>
+        /// <summary>Creates a new empty <see cref="Touchstone"/> with a the specified ports and options.</summary>
         /// <param name="numPorts">The number of ports of the device that the Touchstone file will represent.</param>
         /// <param name="opts">The <see cref="TouchstoneOptions"/> that will define the format of the resulting file.</param>
-        public TouchstoneFile(int numPorts, TouchstoneOptions opts)
+        public Touchstone(int numPorts, TouchstoneOptions opts)
         {
             NetworkParameters = opts.Parameter switch
             {
@@ -54,19 +54,19 @@ namespace MicrowaveNetworks.Touchstone
         }
         /// <summary>Creates a new Touchstone file from an existing <see cref="INetworkParametersCollection"/> with default settings.</summary>
         /// <param name="parameters">Specifies the network data that will comprise this Touchstone file.</param>
-        public TouchstoneFile(INetworkParametersCollection parameters)
+        public Touchstone(INetworkParametersCollection parameters)
         {
             NetworkParameters = parameters;
             Keywords.NumberOfPorts = parameters.NumberOfPorts;
         }
         /// <summary>
-        /// Creates a new <see cref="TouchstoneFile"/> object by parsing the options, keywords, and network data contained within the specified file.
+        /// Creates a new <see cref="Touchstone"/> object by parsing the options, keywords, and network data contained within the specified file.
         /// </summary>
         /// <param name="filePath">The Touchstone (*.snp) file to be loaded.</param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="FileNotFoundException"></exception>
         /// <exception cref="InvalidDataException"></exception>
-        public TouchstoneFile(string filePath)
+        public Touchstone(string filePath)
         {
             using TouchstoneReader reader = TouchstoneReader.Create(filePath);
             Options = reader.Options;

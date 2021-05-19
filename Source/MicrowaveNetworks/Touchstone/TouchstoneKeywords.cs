@@ -8,12 +8,12 @@ namespace MicrowaveNetworks.Touchstone
     public class TouchstoneKeywords
     {
         /// <summary>Provides information on the Version of the specification under which the file contents should be interpreted.</summary>
-        /// <remarks>This property will alwyas be set when a file is read for both 1.0 and 2.0 files so that the file version is clearly known. When a <see cref="TouchstoneFile"/> 
+        /// <remarks>This property will alwyas be set when a file is read for both 1.0 and 2.0 files so that the file version is clearly known. When a <see cref="Touchstone"/> 
         /// object is created, the version and will be set by default to 1.0 in order to indicate what specification to generate the file in accordance with.</remarks>
         [TouchstoneKeyword("Version")]
         public FileVersion Version = FileVersion.One;
         /// <summary>Defines the number of single-ended ports represented by the network data in the file.</summary>
-        /// <remarks>This value is ignored when saving data from a <see cref="TouchstoneFile"/> object since <see cref="TouchstoneFile.NetworkParameters"/>
+        /// <remarks>This value is ignored when saving data from a <see cref="Touchstone"/> object since <see cref="Touchstone.NetworkParameters"/>
         /// already defines the number of ports represented in the file.</remarks>
         [TouchstoneKeyword("Number of Ports")]
         public int? NumberOfPorts;
