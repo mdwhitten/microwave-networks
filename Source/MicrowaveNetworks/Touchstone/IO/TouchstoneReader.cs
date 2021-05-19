@@ -91,15 +91,15 @@ namespace MicrowaveNetworks.Touchstone.IO
         /// <summary>
         /// Reads all remaining available network data from the Touchstone file from the current point.
         /// </summary>
-        /// <returns>A <see cref="NetworkParametersCollection"/> containing each pair of frequency and <see cref="NetworkParametersMatrix"/> objects,
+        /// <returns>A <see cref="INetworkParametersCollection"/> containing each pair of frequency and <see cref="NetworkParametersMatrix"/> objects,
         /// or null if no more data is available.</returns>
         /// <exception cref="InvalidDataException">Data or format in file is bad.</exception>
         /// <exception cref="ObjectDisposedException">Reader has been disposed.</exception>
-        public NetworkParametersCollection ReadToEnd()
+        public INetworkParametersCollection ReadToEnd()
         {
             if (!disposedValue)
             {
-                NetworkParametersCollection collection = null;
+                INetworkParametersCollection collection = null;
 
                 // Read returns a nullable FrequencyParametersPair object; in this statement,
                 // we use is to validate that it isn't null and break into its parts in a single step.
@@ -108,8 +108,11 @@ namespace MicrowaveNetworks.Touchstone.IO
                     if (collection == null)
                     {
                         int numPorts = matrix.NumPorts;
-                        Type matrixType = matrix.GetType();
-                        collection = new NetworkParametersCollection(numPorts, matrixType);
+                        collection = Options.Parameter switch
+                        {
+                            ParameterType.Scattering => new NetworkParametersCollection<ScatteringParametersMatrix>(numPorts),
+                            _ => throw new NotImplementedException(),
+                        };
                     }
                     collection[frequency] = matrix;
                 }
@@ -384,7 +387,6 @@ namespace MicrowaveNetworks.Touchstone.IO
             {
                 tsReader.ParseOption(currentLine);
             }
-
             public override FrequencyParametersPair? ReadNextMatrix()
             {
                 List<string> rawFlattenedMatrix = new List<string>();
