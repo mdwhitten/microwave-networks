@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text;
 using FluentAssertions;
 using MicrowaveNetworks;
+using System.Collections.Generic;
+using MicrowaveNetworks.Matrices;
 
 namespace ScatteringParametersTests
 {
@@ -50,9 +52,9 @@ namespace ScatteringParametersTests
         {
             string filePath = @"C:\Users\mwhitten\OneDrive - NI\Case Documents\pSemi\VNA Eval\S2P Files\Coupler Path.s2p";
 
-            var data = new TouchstoneFile(filePath);
+            var data = new Touchstone(filePath);
 
-            var test2 = TouchstoneFile.ReadData(filePath).Where(pair => pair.Frequency_Hz > 2e9).ToNetworkParametersCollection();
+            var test2 = Touchstone.ReadData(filePath).Where(pair => pair.Frequency_Hz > 2e9).ToNetworkParametersCollection<ScatteringParametersMatrix>();
 
             StringBuilder sb = new StringBuilder();
             using (TouchstoneWriter writer = TouchstoneWriter.Create(sb))
@@ -66,12 +68,14 @@ namespace ScatteringParametersTests
             }
             string tempPath = Path.GetTempFileName();
             data.Write(tempPath);
+
+
         }
     }
     [TestClass]
     public class ReaderTestsV1
     {
-        static NetworkParametersCollection FromText(string text)
+        static INetworkParametersCollection FromText(string text)
         {
             StringReader reader = new StringReader(text);
             using (TouchstoneReader tsReader = TouchstoneReader.Create(reader))
@@ -83,7 +87,7 @@ namespace ScatteringParametersTests
         [TestMethod]
         public void TestReadOnePort()
         {
-            NetworkParametersCollection coll = default;
+            INetworkParametersCollection coll = default;
             FluentActions.Invoking(() => coll = FromText(SampleFIles.V1.OnePort)).Should().NotThrow();
             coll.NumberOfPorts.Should().Be(1);
             string tempPath = Path.GetTempFileName();
@@ -91,7 +95,7 @@ namespace ScatteringParametersTests
         [TestMethod]
         public void TestReadFourPort()
         {
-            NetworkParametersCollection coll = default;
+            INetworkParametersCollection coll = default;
             FluentActions.Invoking(() => coll = FromText(SampleFIles.V1.FourPort)).Should().NotThrow();
             coll.NumberOfPorts.Should().Be(4);
         }

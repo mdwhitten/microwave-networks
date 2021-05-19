@@ -77,7 +77,7 @@ namespace MicrowaveNetworks
         }
 
         public static implicit operator FrequencyParametersPair(FrequencyParametersPair<TMatrix> pair) => new FrequencyParametersPair(pair.Frequency_Hz, pair.Parameters);
-        public static explicit operator FrequencyParametersPair<TMatrix>(FrequencyParametersPair pair) 
+        public static explicit operator FrequencyParametersPair<TMatrix>(FrequencyParametersPair pair)
             => new FrequencyParametersPair<TMatrix>(pair.Frequency_Hz, pair.Parameters.ConvertParameterType<TMatrix>());
     }
 
@@ -279,7 +279,16 @@ namespace MicrowaveNetworks
 
         void ICollection<FrequencyParametersPair>.Add(FrequencyParametersPair item) => Add(item.Frequency_Hz, item.Parameters.ConvertParameterType<TMatrix>());
 
-        IEnumerator<FrequencyParametersPair> IEnumerable<FrequencyParametersPair>.GetEnumerator() => (IEnumerator<FrequencyParametersPair>)GetEnumerator();
+        IEnumerator<FrequencyParametersPair> IEnumerable<FrequencyParametersPair>.GetEnumerator()
+        {
+            // Have to explicitly execute the generic enumerator as below because the implicit cast
+            // to the non-generic FrequencyParametersPair can't be done by casting the IEnumerator object
+            using var enumer = GetEnumerator();
+            while (enumer.MoveNext())
+            {
+                yield return enumer.Current;
+            }
+        }
         #endregion
 
     }
@@ -292,6 +301,14 @@ namespace MicrowaveNetworks
         /// <returns>A new <see cref="NetworkParametersCollection{TMatrix}"/>.</returns>
         public static NetworkParametersCollection<TMatrix> ToNetworkParametersCollection<TMatrix>(this IEnumerable<FrequencyParametersPair<TMatrix>> data) where TMatrix : NetworkParametersMatrix
             => new NetworkParametersCollection<TMatrix>(data);
+
+        /// <summary>
+        /// Creates a <see cref="NetworkParametersCollection{TMatrix}"/> from a sequence of <see cref="FrequencyParametersPair"/> objects.
+        /// </summary>
+        /// <param name="data">The network data to fill the collection with.</param>
+        /// <returns>A new <see cref="NetworkParametersCollection{TMatrix}"/>.</returns>
+        public static NetworkParametersCollection<TMatrix> ToNetworkParametersCollection<TMatrix>(this IEnumerable<FrequencyParametersPair> data) where TMatrix : NetworkParametersMatrix
+            => new NetworkParametersCollection<TMatrix>(data.Select( d => (FrequencyParametersPair<TMatrix>)d));
     }
 }
 
