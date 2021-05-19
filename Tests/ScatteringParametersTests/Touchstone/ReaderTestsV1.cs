@@ -12,7 +12,7 @@ using MicrowaveNetworks.Matrices;
 
 namespace MicrowaveNetworksTests.Touchstone
 {
-    
+
     [TestClass]
     public class ReaderTestsV1
     {
@@ -23,6 +23,11 @@ namespace MicrowaveNetworksTests.Touchstone
             {
                 return tsReader.ReadToEnd();
             }
+        }
+        static TouchstoneReader OpenReaderFromText(string text)
+        {
+            StringReader reader = new StringReader(text);
+            return TouchstoneReader.Create(reader);
         }
 
         [TestMethod]
@@ -39,6 +44,16 @@ namespace MicrowaveNetworksTests.Touchstone
             INetworkParametersCollection coll = default;
             FluentActions.Invoking(() => coll = FromText(SampleFiles.V1.FourPort)).Should().NotThrow();
             coll.NumberOfPorts.Should().Be(4);
+        }
+        [TestMethod]
+        public void TestHeaderParsing()
+        {
+            foreach ((string header, TouchstoneOptions options) in SampleFiles.V1.HeaderMaps)
+            {
+                var reader = OpenReaderFromText(header);
+                reader.Options.Should().BeEquivalentTo(options);
+                reader.Dispose();
+            }
         }
     }
 }
