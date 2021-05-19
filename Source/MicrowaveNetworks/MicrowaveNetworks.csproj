@@ -3,7 +3,6 @@
     <TargetFrameworks>netstandard2.0;net472;net5.0</TargetFrameworks>
     <LangVersion>8.0</LangVersion>
     <OutputType>Library</OutputType>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <Authors>Michael Whitten</Authors>
     <PackageId>MicrowaveNetworks</PackageId>
     <RepositoryUrl>https://github.com/mdwhitten/microwave-networks</RepositoryUrl>
@@ -12,13 +11,22 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/mdwhitten/microwave-networks</PackageProjectUrl>
-  </PropertyGroup>
-  <PropertyGroup>
     <DocumentationFile>bin\MicrowaveNetworks.xml</DocumentationFile>
+    <PackageIcon>SmithChart.png</PackageIcon>
+    <PackageTags>s2p, snp, touchstone, rf, microwaves, deembedding, embedding, networks, cables, calibration, vna</PackageTags>
+    <Description>A library implementing common tools for working with microwave networks including reading/writing to Touchstone (.snp) files, de/embedding network parameters, etc.</Description>
+    <Copyright>Copyright ©  2021</Copyright>
+    <Product>Microwave Networks</Product>
+    <Company>NI</Company>
+    <GenerateAssemblyCompanyAttribute>True</GenerateAssemblyCompanyAttribute>
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\..\Specification\touchstone_ver2_0.pdf" Link="Touchstone\touchstone_ver2_0.pdf" />
     <None Include="..\.editorconfig" Link=".editorconfig" />
+    <None Include="Package\SmithChart.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics">
