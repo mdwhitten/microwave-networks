@@ -20,6 +20,9 @@
     <Company>NI</Company>
     <GenerateAssemblyCompanyAttribute>True</GenerateAssemblyCompanyAttribute>
   </PropertyGroup>
+  <PropertyGroup>
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+  </PropertyGroup>
   <ItemGroup>
     <None Include="..\..\Specification\touchstone_ver2_0.pdf" Link="Touchstone\touchstone_ver2_0.pdf" />
     <None Include="..\.editorconfig" Link=".editorconfig" />
