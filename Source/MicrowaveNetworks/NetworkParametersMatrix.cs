@@ -164,9 +164,18 @@ namespace MicrowaveNetworks
         /// <exception cref="ArgumentException">Thrown when <typeparamref name="T"/> is <see cref="NetworkParametersMatrix"/> rather than a child class.</exception>
         public T ConvertParameterType<T>() where T : NetworkParametersMatrix
         {
-            Type tType = typeof(T);
-
-            return (T)ConvertParameterType(tType);
+            Type parameterType = typeof(T);
+            switch (true)
+            {
+                case true when parameterType == typeof(ScatteringParametersMatrix):
+                    return (T)(NetworkParametersMatrix)ToSParameters();
+                case true when parameterType == typeof(TransferParametersMatrix):
+                    return (T)(NetworkParametersMatrix)ToTParameters();
+                case true when parameterType == typeof(NetworkParametersMatrix):
+                    throw new ArgumentException($"Conversion type must be a child class of {nameof(NetworkParametersMatrix)}.", nameof(parameterType));
+                default:
+                    throw new NotImplementedException();
+            };
         }
 
         #region Overrides and Interface Implementations
@@ -236,20 +245,6 @@ namespace MicrowaveNetworks
             {
                 throw new IndexOutOfRangeException($"Invalid index specified for {paramName}. Valid values are from 1 to {NumPorts}.");
             }
-        }
-        private NetworkParametersMatrix ConvertParameterType(Type parameterType)
-        {
-            switch (true)
-            {
-                case true when parameterType == typeof(ScatteringParametersMatrix):
-                    return ToSParameters();
-                case true when parameterType == typeof(TransferParametersMatrix):
-                    return ToTParameters();
-                case true when parameterType == typeof(NetworkParametersMatrix):
-                    throw new ArgumentException($"Conversion type must be a child class of {nameof(NetworkParametersMatrix)}.", nameof(parameterType));
-                default:
-                    throw new NotImplementedException();
-            };
         }
         protected abstract ScatteringParametersMatrix ToSParameters();
         protected abstract TransferParametersMatrix ToTParameters();

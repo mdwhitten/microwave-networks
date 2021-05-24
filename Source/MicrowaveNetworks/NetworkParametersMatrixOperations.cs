@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using MicrowaveNetworks.Matrices;
+using System.Linq;
 
 namespace MicrowaveNetworks
 {
@@ -14,9 +15,9 @@ namespace MicrowaveNetworks
         /// matrix multiplication to combine into a single T-parameter matrix. This matrix is then converted back to the original parameter matrix type.</remarks>
         /// <param name="matrices">An array of matrices to be cascaded.</param>
         /// <returns>A single composite <see cref="NetworkParameter"/> describing the network from the ports of the first device to the ports of the final device.</returns>
-        public static NetworkParametersMatrix Cascade(params NetworkParametersMatrix[] matrices)
+        public static TMatrix Cascade<TMatrix>(params TMatrix[] matrices) where TMatrix : NetworkParametersMatrix
         {
-            return Cascade((IList<NetworkParametersMatrix>)matrices);
+            return Cascade((IEnumerable<TMatrix>)matrices);
         }
         /// <summary>
         /// Cascades (embeds) a series of <see cref="NetworkParametersMatrix"/> between subsequently connected ports to render a single composite
@@ -26,27 +27,30 @@ namespace MicrowaveNetworks
         /// matrix multiplication to combine into a single T-parameter matrix. This matrix is then converted back to the original parameter matrix type.</remarks>
         /// <param name="matrices">A list of matrices to be cascaded.</param>
         /// <returns>A single composite <see cref="NetworkParameter"/> describing the network from the ports of the first device to the ports of the final device.</returns>
-        public static NetworkParametersMatrix Cascade(IList<NetworkParametersMatrix> matrices)
+        public static TMatrix Cascade<TMatrix>(IEnumerable<TMatrix> matrices) where TMatrix : NetworkParametersMatrix
         {
-            if (matrices == null || matrices.Count <= 0) throw new ArgumentException(nameof(matrices));
+            if (matrices == null || !matrices.Any()) throw new ArgumentException(nameof(matrices));
 
-            //HashSet<Type> set = new HashSet<Type>(matrices.Select( m => m.GetType())
-            NetworkParametersMatrix p1 = matrices[0];
-            Type firstType = p1.GetType();
-
-            for (int i = 1; i < matrices.Count; i++)
+            using (IEnumerator<NetworkParametersMatrix> enumer = matrices.GetEnumerator())
             {
-                NetworkParametersMatrix p2 = matrices[i];
+                enumer.MoveNext();
 
-                TransferParametersMatrix t1 = p1.ToTParameters();
-                TransferParametersMatrix t2 = p2.ToTParameters();
+                NetworkParametersMatrix p1 = enumer.Current;
 
-                TransferParametersMatrix composite = t1 * t2;
+                while (enumer.MoveNext())
+                {
+                    NetworkParametersMatrix p2 = enumer.Current;
 
-                p1 = composite;
+                    TransferParametersMatrix t1 = p1.ToTParameters();
+                    TransferParametersMatrix t2 = p2.ToTParameters();
+
+                    TransferParametersMatrix composite = t1 * t2;
+
+                    p1 = composite;
+                }
+
+                return p1.ConvertParameterType<TMatrix>();
             }
-
-            return p1.ConvertParameterType(firstType);
         }
     }
 }

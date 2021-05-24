@@ -6,6 +6,7 @@ using MicrowaveNetworks.Touchstone.IO;
 using MicrowaveNetworks.Internal;
 using System.Threading.Tasks;
 using System.Text;
+using MicrowaveNetworks.Matrices;
 
 namespace MicrowaveNetworks.Touchstone
 {
@@ -17,9 +18,9 @@ namespace MicrowaveNetworks.Touchstone
     /// </summary>
     /// <remarks>Use this class when writing to a Touchstone file for complete control of the final output, or when making in-memory modifications/round-trip edits to an existing file.
     /// If only the network data is needed from the file, you can use the <see cref="ReadAllData(string)"/> function to quickly access the data. Alternatively, you
-    /// can use the low-level functions defined in <see cref="Touchstone.IO"/> for more complete control over file processing.
+    /// can use the low-level functions defined in <see cref="MicrowaveNetworks.Touchstone.IO"/> for more complete control over file processing.
     /// <para></para>See the specification defined at http://ibis.org/touchstone_ver2.0/touchstone_ver2_0.pdf for more information.</remarks>
-    public class TouchstoneFile
+    public class Touchstone
     {
         /// <summary>
         /// Gets or sets the <see cref="TouchstoneOptions"/> present in the Touchstone file.
@@ -32,37 +33,40 @@ namespace MicrowaveNetworks.Touchstone
         public TouchstoneKeywords Keywords { get; set; } = new TouchstoneKeywords();
 
         /// <summary>
-        /// Gets or sets the <see cref="NetworkParametersCollection"/> representing the network data present in the Touchstone file.
+        /// Gets or sets the <see cref="INetworkParametersCollection"/> representing the network data present in the Touchstone file.
         /// </summary>
-        public NetworkParametersCollection NetworkParameters { get; set; }
+        public INetworkParametersCollection NetworkParameters { get; set; }
 
         #region Constructors
-        internal TouchstoneFile() { }
+        internal Touchstone() { }
 
-        /// <summary>Creates a new empty <see cref="TouchstoneFile"/> with a the specified ports and options.</summary>
+        /// <summary>Creates a new empty <see cref="Touchstone"/> with a the specified ports and options.</summary>
         /// <param name="numPorts">The number of ports of the device that the Touchstone file will represent.</param>
         /// <param name="opts">The <see cref="TouchstoneOptions"/> that will define the format of the resulting file.</param>
-        public TouchstoneFile(int numPorts, TouchstoneOptions opts)
+        public Touchstone(int numPorts, TouchstoneOptions opts)
         {
-            Type parameterType = opts.Parameter.ToNetworkParameterMatrixType();
-            NetworkParameters = new NetworkParametersCollection(numPorts, parameterType);
+            NetworkParameters = opts.Parameter switch
+            {
+                ParameterType.Scattering => new NetworkParametersCollection<ScatteringParametersMatrix>(numPorts),
+                _ => throw new NotImplementedException()
+            };
             Options = opts;
         }
-        /// <summary>Creates a new Touchstone file from an existing <see cref="NetworkParametersCollection"/> with default settings.</summary>
+        /// <summary>Creates a new Touchstone file from an existing <see cref="INetworkParametersCollection"/> with default settings.</summary>
         /// <param name="parameters">Specifies the network data that will comprise this Touchstone file.</param>
-        public TouchstoneFile(NetworkParametersCollection parameters)
+        public Touchstone(INetworkParametersCollection parameters)
         {
             NetworkParameters = parameters;
             Keywords.NumberOfPorts = parameters.NumberOfPorts;
         }
         /// <summary>
-        /// Creates a new <see cref="TouchstoneFile"/> object by parsing the options, keywords, and network data contained within the specified file.
+        /// Creates a new <see cref="Touchstone"/> object by parsing the options, keywords, and network data contained within the specified file.
         /// </summary>
         /// <param name="filePath">The Touchstone (*.snp) file to be loaded.</param>
         /// <exception cref="ArgumentNullException"></exception>
         /// <exception cref="FileNotFoundException"></exception>
         /// <exception cref="InvalidDataException"></exception>
-        public TouchstoneFile(string filePath)
+        public Touchstone(string filePath)
         {
             using TouchstoneReader reader = TouchstoneReader.Create(filePath);
             Options = reader.Options;
@@ -192,28 +196,77 @@ namespace MicrowaveNetworks.Touchstone
         /// </summary>
         /// <param name="filePath">The Touchstone file to read data from.</param>
         /// <returns>All the network data loaded from the file.</returns>
-        /// <remarks>Unlike <see cref="ReadData(string)"/>, this method returns a <see cref="NetworkParametersCollection"/> with all of the
+        /// <remarks>Unlike <see cref="ReadData(string)"/>, this method returns a <see cref="INetworkParametersCollection"/> with all of the
         /// network data loaded into memory.</remarks>
         /// <exception cref="ArgumentNullException"><paramref name="filePath"/> is null.</exception>
         /// <exception cref="FileNotFoundException"><paramref name="filePath"/> is not found.</exception>
         /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="filePath"/>.</exception>
-        public static NetworkParametersCollection ReadAllData(string filePath)
+        public static INetworkParametersCollection ReadAllData(string filePath)
         {
             using TouchstoneReader tsReader = TouchstoneReader.Create(filePath);
             return tsReader.ReadToEnd();
         }
         /// <summary>
+        /// Reads all frequency-dependent network parameter data from the specified file. A <see cref="InvalidCastException"/> will be
+        /// thrown if the Touchstone options line indicates a different type of data in the file than the requested type.
+        /// </summary>
+        /// <param name="filePath">The Touchstone file to read data from.</param>
+        /// <returns>All the network data loaded from the file.</returns>
+        /// <remarks>Unlike <see cref="ReadData(string)"/>, this method returns a <see cref="NetworkParametersCollection{TMatrix}"/> with all of the
+        /// network data loaded into memory.</remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="filePath"/> is null.</exception>
+        /// <exception cref="FileNotFoundException"><paramref name="filePath"/> is not found.</exception>
+        /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="filePath"/>.</exception>
+        public static NetworkParametersCollection<T> ReadAllData<T>(string filePath) where T : NetworkParametersMatrix
+        {
+            using TouchstoneReader tsReader = TouchstoneReader.Create(filePath);
+            Type fileParamType = tsReader.Options.Parameter.ToNetworkParameterMatrixType();
+            if (fileParamType != typeof(T))
+            {
+                throw new InvalidCastException($"The specified Touchstone file contains parameter data of type {fileParamType.Name} which does not match the expected type " +
+                    $"{typeof(T).Name}");
+            }
+            else
+            {
+                return (NetworkParametersCollection<T>)tsReader.ReadToEnd();
+            }
+        }
+        /// <summary>
         /// Reads all frequency-dependent network parameter data from the specified <see cref="TextReader"/>.
         /// </summary>
         /// <param name="reader">The <see cref="TextReader"/> to read network data from.</param>
-        /// <remarks>Unlike <see cref="ReadData(TextReader)"/>, this method returns a <see cref="NetworkParametersCollection"/> with all of the
+        /// <remarks>Unlike <see cref="ReadData(TextReader)"/>, this method returns a <see cref="INetworkParametersCollection"/> with all of the
         /// network data loaded into memory.</remarks>
         /// <exception cref="ArgumentNullException"><paramref name="reader"/> is null.</exception>
         /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="reader"/>.</exception>
-        public static NetworkParametersCollection ReadAllData(TextReader reader)
+        public static INetworkParametersCollection ReadAllData(TextReader reader)
         {
             using TouchstoneReader tsReader = TouchstoneReader.Create(reader);
             return tsReader.ReadToEnd();
+        }
+        /// <summary>
+        /// Reads all frequency-dependent network parameter data of type <typeparamref name="T"/> from the specified <see cref="TextReader"/>. A <see cref="InvalidCastException"/> will be
+        /// thrown if the Touchstone options line indicates a different type of data in the file than the requested type.
+        /// </summary>
+        /// <param name="reader">The <see cref="TextReader"/> to read network data from.</param>
+        /// <remarks>Unlike <see cref="ReadData(TextReader)"/>, this method returns a <see cref="NetworkParametersCollection{TMatrix}"/> with all of the
+        /// network data loaded into memory.</remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="reader"/> is null.</exception>
+        /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="reader"/>.</exception>
+        /// <exception cref="InvalidCastException">Data in file is not <typeparamref name="T"/></exception>
+        public static NetworkParametersCollection<T> ReadAllData<T>(TextReader reader) where T : NetworkParametersMatrix
+        {
+            using TouchstoneReader tsReader = TouchstoneReader.Create(reader);
+            Type fileParamType = tsReader.Options.Parameter.ToNetworkParameterMatrixType();
+            if (fileParamType != typeof(T))
+            {
+                throw new InvalidCastException($"The specified Touchstone file contains parameter data of type {fileParamType.Name} which does not match the expected type " +
+                    $"{typeof(T).Name}");
+            }
+            else
+            {
+                return (NetworkParametersCollection<T>)tsReader.ReadToEnd();
+            }
         }
         #endregion
     }
