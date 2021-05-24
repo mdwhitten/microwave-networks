@@ -2,6 +2,12 @@
 
 name: Release
 
+env:
+    SOURCE: Source
+    TESTS: Tests
+    GITHUB_PACKAGE_SOURCE: ${{ format('https://nuget.pkg.github.com/{0}/index.json', github.ACTOR) }}
+    NUGET_PACKAGE_SOURCE: 'https://api.nuget.org/v3/index.json'
+
 # Controls when the action will run. 
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
@@ -34,8 +40,8 @@ jobs:
     - name: Push to GitHub
       env: 
         PACKAGES: ${{ format('{0}\MicrowaveNetworks\bin\Release\*.nupkg', env.SOURCE) }}
-      run: dotnet nuget push "${{ env.PACKAGES }}" --api-key ${{ secrets.GITHUB_TOKEN }} -s ${{ env.PACKAGE_SOURCE }}
+      run: dotnet nuget push "${{ env.PACKAGES }}" --api-key ${{ secrets.GITHUB_TOKEN }} -s ${{ env.GITHUB_PACKAGE_SOURCE }}
     - name: Push to Nuget
       env: 
         PACKAGES: ${{ format('{0}\MicrowaveNetworks\bin\Release\*.nupkg', env.SOURCE) }}
-      run: dotnet nuget push "${{ env.PACKAGES }}" --api-key ${{ secrets.NUGET_TOKEN }} -s ${{ env.PACKAGE_SOURCE }}
+      run: dotnet nuget push "${{ env.PACKAGES }}" --api-key ${{ secrets.NUGET_TOKEN }} -s ${{ env.NUGET_PACKAGE_SOURCE }}
