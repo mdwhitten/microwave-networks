@@ -4,7 +4,7 @@ using MicrowaveNetworks;
 using MicrowaveNetworks.Matrices;
 using FluentAssertions;
 
-namespace ScatteringParametersTests
+namespace MicrowaveNetworksTests
 {
     [TestClass]
     public class ScatteringParametersMatrixTests

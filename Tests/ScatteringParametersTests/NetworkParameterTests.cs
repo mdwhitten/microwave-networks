@@ -3,7 +3,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 using MicrowaveNetworks;
 using FluentAssertions;
 
-namespace NetworkParametersTests
+namespace MicrowaveNetworksTests
 {
     [TestClass]
     public class NetworkParameterTests
