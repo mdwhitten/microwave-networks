@@ -13,7 +13,7 @@ A C# library implementing common tools for working with microwave networks inclu
 - Other parameter types (admittance, impedance, etc.)
 - Interpolation
 
-# Samples
+# Examples
 
 ## Network Data
 
