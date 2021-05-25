@@ -2,6 +2,17 @@
 
 A C# library implementing common tools for working with microwave networks including reading/writing to Touchstone (.snp) files, de/embedding network parameters, etc.
 
+## Currently Supported Features
+- Full support for Touchstone file format version 1.0
+- Cascading/embedding/de-embedding 2-port networks
+- S and T parameters
+
+## Future/In Development Features
+- Full support for Touchston file format version 2.0
+- Cascading *n-port* networks using the [symmetry extension method](https://ieeexplore.ieee.org/document/4657394)
+- Other parameter types (admittance, impedance, etc.)
+- Interpolation
+
 # Samples
 
 ## Network Data
