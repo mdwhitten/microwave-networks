@@ -1,6 +1,10 @@
 # Microwave Networks
 
 A C# library implementing common tools for working with microwave networks including reading/writing to Touchstone (.snp) files, de/embedding network parameters, etc.
+Download:
+- [NuGet](https://www.nuget.org/packages/MicrowaveNetworks/) 
+- [GitHub Packages](https://github.com/users/mdwhitten/packages?repo_name=microwave-networks)
+
 
 ## Currently Supported Features
 - Full support for Touchstone file format version 1.0
