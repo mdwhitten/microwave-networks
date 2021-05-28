@@ -20,7 +20,7 @@ jobs:
             # Optional - the name of the development branch to merge the release branch into.
             dev-branch-name: develop
             # Optional - indicates whether to delete the release branch after completing all gitflow actions.
-            del-rel-branch: true
+            del-source-branch: true
             
   release:   
     runs-on: windows-latest
