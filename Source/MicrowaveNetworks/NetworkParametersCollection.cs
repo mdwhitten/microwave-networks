@@ -93,10 +93,10 @@ namespace MicrowaveNetworks
         public int NumberOfPorts { get; }
 
         /// <summary>Gets all frequencies defined in this collection in Hz.</summary>
-        public ICollection<double> Frequencies => _NetworkParameters.Keys;
+        public IReadOnlyCollection<double> Frequencies => _NetworkParameters.Keys;
         /// <summary>Gets all the network parameters defined in this collection.</summary>
-        public ICollection<TMatrix> NetworkParameters => _NetworkParameters.Values;
-        ICollection<NetworkParametersMatrix> INetworkParametersCollection.NetworkParameters => (ICollection<NetworkParametersMatrix>)NetworkParameters;
+        public IReadOnlyCollection<TMatrix> NetworkParameters => _NetworkParameters.Values;
+        IReadOnlyCollection<NetworkParametersMatrix> INetworkParametersCollection.NetworkParameters => NetworkParameters;
         /// <summary>Gets the specific subtype of <see cref="NetworkParametersMatrix"/> represented by this collection.</summary>
         /// <remarks>This collection is often created from a file and so the network parameter matrix type will not be known until after this object is created.</remarks>
         Type INetworkParametersCollection.NetworkParameterType => typeof(TMatrix);
