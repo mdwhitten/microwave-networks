@@ -25,9 +25,9 @@ namespace MicrowaveNetworks
         NetworkParameter this[double frequency, int destinationPort, int sourcePort] { get; set; }
 
         /// <summary>Gets all frequencies defined in this collection in Hz.</summary>
-        ICollection<double> Frequencies { get; }
+        IReadOnlyCollection<double> Frequencies { get; }
         /// <summary>Gets all the network parameters defined in this collection.</summary>
-        ICollection<NetworkParametersMatrix> NetworkParameters { get; }
+        IReadOnlyCollection<NetworkParametersMatrix> NetworkParameters { get; }
         /// <summary>Gets the specific subtype of <see cref="NetworkParametersMatrix"/> represented by this collection.</summary>
         /// <remarks>This collection is often created from a file and so the network parameter matrix type will not be known until after this object is created.</remarks>
         Type NetworkParameterType { get; }
