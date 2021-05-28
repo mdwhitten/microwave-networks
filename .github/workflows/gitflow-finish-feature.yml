@@ -10,7 +10,7 @@ jobs:
   finish-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: mdwhitten/gitflow-finish-release-action@v1.0.0
+      - uses: mdwhitten/gitflow-finish-release-action@v1.2.0
         with:
             pr-num: ${{ github.event.number }}
             token: ${{ secrets.GITHUB_TOKEN }}
