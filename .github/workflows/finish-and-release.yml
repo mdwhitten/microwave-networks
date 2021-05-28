@@ -1,0 +1,55 @@
+name: Finish and Release
+
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  pull_request:
+    branches: [ master ]
+    types: [closed]
+
+jobs:
+  gitflow-finish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mdwhitten/gitflow-finish-action@v1.2.0
+        with:
+            pr-num: ${{ github.event.number }}
+            token: ${{ secrets.GITHUB_TOKEN }}
+            repo-name: ${{ github.repository }}
+            # Optional - sets whether to merge the release branch back into the development branch automatically.
+            merge-into-dev: true
+            # Optional - the name of the development branch to merge the release branch into.
+            dev-branch-name: develop
+            # Optional - indicates whether to delete the release branch after completing all gitflow actions.
+            del-source-branch: true
+            
+  release:   
+    runs-on: windows-latest
+    needs: [gitflow-finish]
+    env:
+      SOURCE: Source
+      TESTS: Tests
+      GITHUB_PACKAGE_SOURCE: ${{ format('https://nuget.pkg.github.com/{0}/index.json', github.ACTOR) }}
+      NUGET_PACKAGE_SOURCE: 'https://api.nuget.org/v3/index.json'
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+    - name: Restore dependencies
+      run: dotnet restore $env:SOURCE
+    - name: Build
+      run: dotnet build $env:SOURCE --no-restore --configuration Release 
+    - name: Pack
+      run: dotnet pack $env:SOURCE --no-build --configuration Release
+    - name: Push to GitHub
+      env: 
+        PACKAGES: ${{ format('{0}\MicrowaveNetworks\bin\Release\*.nupkg', env.SOURCE) }}
+      run: dotnet nuget push "${{ env.PACKAGES }}" --api-key ${{ secrets.GITHUB_TOKEN }} -s ${{ env.GITHUB_PACKAGE_SOURCE }}
+    - name: Push to Nuget
+      env: 
+        PACKAGES: ${{ format('{0}\MicrowaveNetworks\bin\Release\*.nupkg', env.SOURCE) }}
+      run: dotnet nuget push "${{ env.PACKAGES }}" --api-key ${{ secrets.NUGET_TOKEN }} -s ${{ env.NUGET_PACKAGE_SOURCE }}
