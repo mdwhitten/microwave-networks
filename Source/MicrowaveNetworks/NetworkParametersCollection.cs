@@ -244,7 +244,7 @@ namespace MicrowaveNetworks
         NetworkParametersMatrix INetworkParametersCollection.this[double frequency]
         {
             get => this[frequency];
-            set => value.ConvertParameterType<TMatrix>();
+            set => this[frequency] = value.ConvertParameterType<TMatrix>();
         }
 
 
