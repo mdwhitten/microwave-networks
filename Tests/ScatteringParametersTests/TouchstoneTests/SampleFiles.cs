@@ -1,7 +1,7 @@
 ﻿using MicrowaveNetworks.Touchstone;
 using System.Collections.Generic;
 
-namespace MicrowaveNetworksTests.Touchstone
+namespace MicrowaveNetworksTests.TouchstoneTests
 {
     public static class SampleFiles
     {

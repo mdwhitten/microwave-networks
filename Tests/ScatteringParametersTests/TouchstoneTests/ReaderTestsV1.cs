@@ -10,7 +10,7 @@ using MicrowaveNetworks;
 using System.Collections.Generic;
 using MicrowaveNetworks.Matrices;
 
-namespace MicrowaveNetworksTests.Touchstone
+namespace MicrowaveNetworksTests.TouchstoneTests
 {
 
     [TestClass]

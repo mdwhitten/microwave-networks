@@ -266,7 +266,7 @@ namespace MicrowaveNetworks.Touchstone.IO
             // Remove any trailing comments and any leading or trailing whitespace
             line = StripTrailingComment(line).Trim();
 
-            string[] data = Regex.Split(line, @"\s");
+            string[] data = Regex.Split(line, @"\s+");
             return new List<string>(data);
         }
         #endregion
