@@ -204,7 +204,32 @@ namespace MicrowaveNetworks
                 }
             }
         }
+        /// <summary>Finds the <see cref="NetworkParametersMatrix"/> at or nearest to <paramref name="frequency"/>.</summary>
+        /// <param name="frequency">The frequency to locate in Hz.</param>
+        /// <returns>The <see cref="NetworkParametersMatrix"/> at or nearest to <paramref name="frequency"/>.</returns>
+        public TMatrix Nearest(double frequency) 
+        {
+            bool predecessorFound = frequencies.TryWeakPredecessor(frequency, out double predecessor);
+            bool successorFound = frequencies.TryWeakSuccessor(frequency, out double successor);
 
+            if (predecessorFound && successorFound)
+            {
+                double preDelta = Math.Abs(predecessor - frequency);
+                double postDelta = Math.Abs(successor - frequency);
+
+                return preDelta < postDelta ? this[predecessor] : this[successor];
+            }
+            else if (predecessorFound)
+            {
+                return this[predecessor];
+            }
+            else if (successorFound)
+            {
+                return this[successor];
+            }
+            throw new ArgumentOutOfRangeException(nameof(frequency));
+        }
+        NetworkParametersMatrix INetworkParametersCollection.Nearest(double frequency) => Nearest(frequency);
         /// <summary>Gets the number of <see cref="FrequencyParametersPair"/> objects contained in the collection.</summary>
         public int Count => _NetworkParameters.Count;
 
