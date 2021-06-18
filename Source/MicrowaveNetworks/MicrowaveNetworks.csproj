@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net472;net5.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net472;net5.0;net45</TargetFrameworks>
     <LangVersion>8.0</LangVersion>
     <OutputType>Library</OutputType>
     <Authors>Michael Whitten</Authors>
@@ -49,6 +49,11 @@
   <ItemGroup Condition="'$(TargetFramework)' == 'net472' Or '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="Microsoft.Bcl.AsyncInterfaces">
       <Version>5.0.0</Version>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net45'">
+    <PackageReference Include="System.ValueTuple">
+      <Version>4.5.0</Version>
     </PackageReference>
   </ItemGroup>
 </Project>

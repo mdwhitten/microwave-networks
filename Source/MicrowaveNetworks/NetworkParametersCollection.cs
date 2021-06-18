@@ -103,11 +103,19 @@ namespace MicrowaveNetworks
 
         /// <summary>Gets the number of ports of the device that this collection represents.</summary>
         public int NumberOfPorts { get; }
-        
         /// <summary>Gets all frequencies defined in this collection in Hz.</summary>
+
+#if NET45
+        public IReadOnlyCollection<double> Frequencies => _NetworkParameters.Keys.ToList().AsReadOnly();
+#else
         public IReadOnlyCollection<double> Frequencies => _NetworkParameters.Keys;
+#endif
         /// <summary>Gets all the network parameters defined in this collection.</summary>
+#if NET45
+        public IReadOnlyCollection<TMatrix> NetworkParameters => _NetworkParameters.Values.ToList().AsReadOnly();
+#else
         public IReadOnlyCollection<TMatrix> NetworkParameters => _NetworkParameters.Values;
+#endif
         IReadOnlyCollection<NetworkParametersMatrix> INetworkParametersCollection.NetworkParameters => NetworkParameters;
         /// <summary>Gets the specific subtype of <see cref="NetworkParametersMatrix"/> represented by this collection.</summary>
         /// <remarks>This collection is often created from a file and so the network parameter matrix type will not be known until after this object is created.</remarks>
@@ -207,7 +215,7 @@ namespace MicrowaveNetworks
         /// <summary>Finds the <see cref="NetworkParametersMatrix"/> at or nearest to <paramref name="frequency"/>.</summary>
         /// <param name="frequency">The frequency to locate in Hz.</param>
         /// <returns>The <see cref="NetworkParametersMatrix"/> at or nearest to <paramref name="frequency"/>.</returns>
-        public TMatrix Nearest(double frequency) 
+        public TMatrix Nearest(double frequency)
         {
             bool predecessorFound = frequencies.TryWeakPredecessor(frequency, out double predecessor);
             bool successorFound = frequencies.TryWeakSuccessor(frequency, out double successor);
@@ -313,7 +321,7 @@ namespace MicrowaveNetworks
             return collection;
         }
 
-        #region Explicit ICollection Implementations
+#region Explicit ICollection Implementations
         bool SCG.ICollection<FrequencyParametersPair>.IsReadOnly => false;
 
 
@@ -371,7 +379,7 @@ namespace MicrowaveNetworks
                 yield return enumer.Current;
             }
         }
-        #endregion
+#endregion
 
     }
 
@@ -382,7 +390,7 @@ namespace MicrowaveNetworks
     public class InteropolationOptions
     {
         public bool Enabled;
-        public InteropolationMethods Method; 
+        public InteropolationMethods Method;
     }
     public static class CollectionUtilities
     {
@@ -400,7 +408,7 @@ namespace MicrowaveNetworks
         /// <param name="data">The network data to fill the collection with.</param>
         /// <returns>A new <see cref="NetworkParametersCollection{TMatrix}"/>.</returns>
         public static NetworkParametersCollection<TMatrix> ToNetworkParametersCollection<TMatrix>(this IEnumerable<FrequencyParametersPair> data) where TMatrix : NetworkParametersMatrix
-            => new NetworkParametersCollection<TMatrix>(data.Select( d => (FrequencyParametersPair<TMatrix>)d));
+            => new NetworkParametersCollection<TMatrix>(data.Select(d => (FrequencyParametersPair<TMatrix>)d));
     }
 }
 
