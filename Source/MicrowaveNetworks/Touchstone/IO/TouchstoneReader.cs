@@ -20,15 +20,15 @@ namespace MicrowaveNetworks.Touchstone.IO
         /// <summary>Gets the <see cref="TouchstoneOptions"/> parameters parsed from the options line in the Touchstone file.</summary>
         public TouchstoneOptions Options { get; }
 
-        private static FieldNameLookup<TouchstoneKeywords> keywordLookup = new FieldNameLookup<TouchstoneKeywords>();
-        private static string resistanceSignifier = GetTouchstoneFieldName<TouchstoneOptions>(nameof(TouchstoneOptions.Resistance));
-        private static string referenceKeywordName = GetTouchstoneFieldName<TouchstoneKeywords>(nameof(TouchstoneKeywords.Reference));
+        private static readonly FieldNameLookup<TouchstoneKeywords> keywordLookup = new FieldNameLookup<TouchstoneKeywords>();
+        private static readonly string resistanceSignifier = GetTouchstoneFieldName<TouchstoneOptions>(nameof(TouchstoneOptions.Resistance));
+        private static readonly string referenceKeywordName = GetTouchstoneFieldName<TouchstoneKeywords>(nameof(TouchstoneKeywords.Reference));
 
 
-        private TextReader reader;
-        private TouchstoneReaderSettings settings;
+        private readonly TextReader reader;
+        private readonly TouchstoneReaderSettings settings;
         private int lineNumber;
-        private TouchstoneReaderCore coreReader;
+        private readonly TouchstoneReaderCore coreReader;
 
 
         private TouchstoneReader(TextReader reader, TouchstoneReaderSettings settings)
@@ -168,44 +168,43 @@ namespace MicrowaveNetworks.Touchstone.IO
 
             // We will manually control the enumerator here since the last item (resistance)
             // has to fetch the next item in sequence
-            using (var enumer = optionsEnumerable.GetEnumerator())
-            {
-                while (enumer.MoveNext())
-                {
-                    string option = enumer.Current;
-                    // Format specifies that options can occur in any order
-                    if (TouchstoneEnumMap<FrequencyUnit>.ValidTouchstoneName(option))
-                    {
-                        //string frequencyUnitName = frequencyUnitLookup.Value[option];
-                        Options.FrequencyUnit = TouchstoneEnumMap<FrequencyUnit>.FromTouchstoneValue(option);
-                    }
-                    else if (TouchstoneEnumMap<FormatType>.ValidTouchstoneName(option))
-                    {
-                        Options.Format = TouchstoneEnumMap<FormatType>.FromTouchstoneValue(option);
-                    }
-                    else if (TouchstoneEnumMap<ParameterType>.ValidTouchstoneName(option))
-                    {
-                        Options.Parameter = TouchstoneEnumMap<ParameterType>.FromTouchstoneValue(option);
-                    }
-                    else if (option == resistanceSignifier)
-                    {
-                        // For resistance, this option is specified in the format of "R [value]"
-                        // Hence, we need to actually move the enumerator forward to get the value
-                        bool success = enumer.MoveNext();
-                        if (success)
-                        {
-                            string value = enumer.Current;
+            using var enumer = optionsEnumerable.GetEnumerator();
 
-                            bool parsed = float.TryParse(value, out float r);
-                            if (parsed) Options.Resistance = r;
-                            else ThrowHelper("Options", "Bad value for resistance");
-                        }
-                        else ThrowHelper("Options", "No value specified for resistance");
-                    }
-                    else
+            while (enumer.MoveNext())
+            {
+                string option = enumer.Current;
+                // Format specifies that options can occur in any order
+                if (TouchstoneEnumMap<FrequencyUnit>.ValidTouchstoneName(option))
+                {
+                    //string frequencyUnitName = frequencyUnitLookup.Value[option];
+                    Options.FrequencyUnit = TouchstoneEnumMap<FrequencyUnit>.FromTouchstoneValue(option);
+                }
+                else if (TouchstoneEnumMap<FormatType>.ValidTouchstoneName(option))
+                {
+                    Options.Format = TouchstoneEnumMap<FormatType>.FromTouchstoneValue(option);
+                }
+                else if (TouchstoneEnumMap<ParameterType>.ValidTouchstoneName(option))
+                {
+                    Options.Parameter = TouchstoneEnumMap<ParameterType>.FromTouchstoneValue(option);
+                }
+                else if (option == resistanceSignifier)
+                {
+                    // For resistance, this option is specified in the format of "R [value]"
+                    // Hence, we need to actually move the enumerator forward to get the value
+                    bool success = enumer.MoveNext();
+                    if (success)
                     {
-                        ThrowHelper("Options", $"Invalid option value {option}");
+                        string value = enumer.Current;
+
+                        bool parsed = float.TryParse(value, out float r);
+                        if (parsed) Options.Resistance = r;
+                        else ThrowHelper("Options", "Bad value for resistance");
                     }
+                    else ThrowHelper("Options", "No value specified for resistance");
+                }
+                else
+                {
+                    ThrowHelper("Options", $"Invalid option value {option}");
                 }
             }
         }
@@ -381,7 +380,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         {
             internal TouchstoneReaderCoreV1(TouchstoneReader reader) : base(reader) { }
             int? flattenedMatrixLength;
-            Queue<string> previewedLines = new Queue<string>();
+            readonly Queue<string> previewedLines = new Queue<string>();
 
             protected override void ReadHeader(string currentLine)
             {

@@ -15,6 +15,9 @@ namespace MicrowaveNetworks.Matrices
     /// </summary>
     public sealed class ScatteringParametersMatrix : NetworkParametersMatrix
     {
+        /// <inheritdoc/>
+        protected override string MatrixPrefix => "S";
+
         /// <summary>
         /// Creates a new <see cref="ScatteringParametersMatrix"/> with the specified number of ports.
         /// </summary>
@@ -40,23 +43,25 @@ namespace MicrowaveNetworks.Matrices
         /// <exception cref="ArgumentOutOfRangeException">Thrown if the number of elements in <paramref name="flattenedList"/> is not a perfect square.</exception>
         public ScatteringParametersMatrix(IList<NetworkParameter> flattenedList, ListFormat format) : base(flattenedList, format) { }
 
+        /// <summary>
+        /// Converts a <see cref="ScatteringParametersMatrix"/> to a <see cref="TransferParametersMatrix"/>.
+        /// </summary>
+        /// <param name="s">The <see cref="ScatteringParametersMatrix"/> to convert.</param>
         public static explicit operator TransferParametersMatrix(ScatteringParametersMatrix s) => s.ToTParameters();
 
+        /// <inheritdoc/>
         protected override ScatteringParametersMatrix ToSParameters() => this;
+
+        /// <inheritdoc/>
         protected override TransferParametersMatrix ToTParameters()
         {
-            SymmetryMatrix s = new SymmetryMatrix(NumPorts);
-            switch (NumPorts)
+            return NumPorts switch
             {
-                case 1:
-                    throw new InvalidOperationException("T parameter conversion invalid for single port network.");
-                case 2:
-                    return TwoPortStoT();
-                case var _ when NumPorts % 2 == 0:
-                    throw new NotImplementedException();
-                default:
-                    throw new NotImplementedException();
-            }
+                1 => throw new InvalidOperationException("T parameter conversion invalid for single port network."),
+                2 => TwoPortStoT(),
+                var _ when NumPorts % 2 == 0 => throw new NotImplementedException(),
+                _ => throw new NotImplementedException(),
+            };
         }
 
         private TransferParametersMatrix TwoPortStoT()
