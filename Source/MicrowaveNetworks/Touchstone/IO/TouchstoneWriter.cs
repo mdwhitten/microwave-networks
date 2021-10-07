@@ -29,19 +29,19 @@ namespace MicrowaveNetworks.Touchstone.IO
         /// <summary>The cancellation token to cancel operations if using the asynchronous write functions.</summary>
         public CancellationToken CancelToken { get; set; } = default;
 
-        private TextWriter writer { get; set; }
+        private TextWriter Writer { get; set; }
 
-        TouchstoneWriterSettings settings;
+        readonly TouchstoneWriterSettings settings;
         bool headerWritten;
         bool columnsWritten;
         TouchstoneWriterCore core;
 
-        private static FieldNameLookup<TouchstoneKeywords> keywordLookup = new FieldNameLookup<TouchstoneKeywords>();
+        private static readonly FieldNameLookup<TouchstoneKeywords> keywordLookup = new FieldNameLookup<TouchstoneKeywords>();
 
         private TouchstoneWriter(TextWriter writer, TouchstoneWriterSettings settings)
         {
             this.settings = settings ?? new TouchstoneWriterSettings();
-            this.writer = writer ?? throw new ArgumentNullException(nameof(writer));
+            this.Writer = writer ?? throw new ArgumentNullException(nameof(writer));
         }
 
         #region Static Constructors
@@ -336,7 +336,7 @@ namespace MicrowaveNetworks.Touchstone.IO
                 columnsWritten = true;
             }
             string line = FormatEntry(frequency, matrix);
-            writer.WriteLine(line);
+            Writer.WriteLine(line);
         }
 
         /// <summary>Asynchronously writes the frequency and <see cref="NetworkParametersMatrix"/> contained in <paramref name="pair"/> to the network data of the file.</summary>
@@ -362,26 +362,26 @@ namespace MicrowaveNetworks.Touchstone.IO
                 CancelToken.ThrowIfCancellationRequested();
             }
             string line = FormatEntry(frequency, matrix);
-            await writer.WriteLineAsync(line);
+            await Writer.WriteLineAsync(line);
         }
         /// <summary>Appends a comment line, preceeded with '!', to the Touchstone file.</summary>
         /// <param name="comment">The comment to be appended. If <paramref name="comment"/> has more than one line, each line will be prepended with the comment character.</param>
         public void WriteCommentLine(string comment)
         {
             string formattedCommment = FormatComment(comment);
-            writer.WriteLine(formattedCommment);
+            Writer.WriteLine(formattedCommment);
         }
         /// <summary>Asynchronously appends a comment line, preceeded with '!', to the Touchstone file.</summary>
         /// <param name="comment">The comment to be appended. If <paramref name="comment"/> has more than one line, each line will be prepended with the comment character.</param>
         public async Task WriteCommentLineAsync(string comment)
         {
             string formattedCommment = FormatComment(comment);
-            await writer.WriteLineAsync(formattedCommment);
+            await Writer.WriteLineAsync(formattedCommment);
         }
         /// <summary>Invokes <see cref="TextWriter.Flush"/> on the underlying object to clear the buffers and cause all data to be written.</summary>
-        public void Flush() => writer.Flush();
+        public void Flush() => Writer.Flush();
         /// <summary>Invokes <see cref="TextWriter.FlushAsync"/> on the underlying object to asynchronously clear the buffers and cause all data to be written.</summary>
-        public async Task FlushAsync() => await writer.FlushAsync();
+        public async Task FlushAsync() => await Writer.FlushAsync();
         #endregion
         #region IDisposable Support
         private bool disposedValue = false; // To detect redundant calls
@@ -395,9 +395,9 @@ namespace MicrowaveNetworks.Touchstone.IO
                     // Specification requires an [End] keyword at the end of the file
                     if (Keywords.Version == FileVersion.Two)
                     {
-                        writer?.Write(ControlKeywords.End);
+                        Writer?.Write(ControlKeywords.End);
                     }
-                    writer?.Dispose();
+                    Writer?.Dispose();
                 }
 
                 disposedValue = true;
@@ -413,14 +413,14 @@ namespace MicrowaveNetworks.Touchstone.IO
 #if NET5_0_OR_GREATER
         private async ValueTask DisposeAsyncCore()
         {
-            if (writer != null)
+            if (Writer != null)
             {
                 // Specification requires an [End] keyword at the end of the file
                 if (Keywords.Version == FileVersion.Two)
                 {
-                    await writer.WriteAsync(ControlKeywords.End);
+                    await Writer.WriteAsync(ControlKeywords.End);
                 }
-                await writer.DisposeAsync();
+                await Writer.DisposeAsync();
             }
         }
         /// <summary>
@@ -485,12 +485,12 @@ namespace MicrowaveNetworks.Touchstone.IO
             public override void WriteHeader()
             {
                 string options = FormatOptions(tsWriter.Options);
-                tsWriter.writer.WriteLine(options);
+                tsWriter.Writer.WriteLine(options);
             }
             public override async Task WriteHeaderAsync()
             {
                 string options = FormatOptions(tsWriter.Options);
-                await tsWriter.writer.WriteLineAsync(options);
+                await tsWriter.Writer.WriteLineAsync(options);
             }
 
             public override ListFormat GetListFormat(int numPorts)
@@ -521,8 +521,8 @@ namespace MicrowaveNetworks.Touchstone.IO
             public override void WriteHeader()
             {
                 throw new NotImplementedException();
-                base.WriteHeader();
-                tsWriter.writer.WriteLine(ControlKeywords.NetworkData);
+                //base.WriteHeader();
+                //tsWriter.Writer.WriteLine(ControlKeywords.NetworkData);
             }
         }
         #endregion

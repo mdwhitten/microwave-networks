@@ -107,14 +107,16 @@ namespace MicrowaveNetworks.Touchstone
         }
         /// <summary>Asynchronously writes the Touchstone file object to the specified file with default writer settings.</summary>
         /// <param name="filePath">The *.sNp file to be created or overwritten.</param>
+        /// /// <param name="token">A <see cref="CancellationToken"/> to cancel the operation.</param>
         /// <remarks>Use the <see cref="TouchstoneWriter"/> class for more control over the file writing process.</remarks>
         public async Task WriteAsync(string filePath, CancellationToken token = default)
         {
-            await WriteAsync(filePath, new TouchstoneWriterSettings());
+            await WriteAsync(filePath, new TouchstoneWriterSettings(), token);
         }
         /// <summary>Asynchronously writes the Touchstone file object to the specified file with the specified writer settings.</summary>
         /// <param name="filePath">The *.sNp file to be created or overwritten.</param>
-        /// /// <param name="settings">Additional settings regarding how the network data in the file should be written.</param>
+        /// <param name="settings">Additional settings regarding how the network data in the file should be written.</param>
+        /// <param name="token">A <see cref="CancellationToken"/> to cancel the operation.</param>
         /// <remarks>Use the <see cref="TouchstoneWriter"/> class for more control over the file writing process.</remarks>
         public async Task WriteAsync(string filePath, TouchstoneWriterSettings settings, CancellationToken token = default)
         {
