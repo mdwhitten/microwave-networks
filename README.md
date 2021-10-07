@@ -12,7 +12,7 @@ Download:
 - S and T parameters
 
 ## Future/In Development Features
-- Full support for Touchston file format version 2.0
+- Full support for Touchstone file format version 2.0
 - Cascading *n-port* networks using the [symmetry extension method](https://ieeexplore.ieee.org/document/4657394)
 - Other parameter types (admittance, impedance, etc.)
 - Interpolation
@@ -80,7 +80,7 @@ tsFile.Write(@"C:\example_data.s2p");
 
 ##### Enumerating/Filtering Touchstone Data with LINQ
 
-Rather than loading all of the data into memory, the following example enumerates each matrix one at a time from the to allow for runtime manipulation without allocating unnecessary memory allocation. 
+Rather than loading all of the data into memory, the following example enumerates each matrix one at a time from a file to allow for runtime manipulation without allocating unnecessary memory. 
 
 ```c#
 string path = @"C:\example.s2p";
