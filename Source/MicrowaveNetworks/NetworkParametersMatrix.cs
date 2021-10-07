@@ -60,17 +60,33 @@ namespace MicrowaveNetworks
     /// </summary>
     public abstract partial class NetworkParametersMatrix : IEnumerable<PortNetworkParameterPair>
     {
-        protected DenseMatrix matrix;
 
         /// <summary>Gets the number of ports of the device represented by this matrix.</summary>
         public int NumPorts { get; private set; }
+        
+        /// <summary>
+        /// Gets the <see cref="DenseMatrix"/> that holds the network parameter data.
+        /// </summary>
+        protected DenseMatrix Matrix { get; private set; }
+
+        /// <summary>
+        /// Gets the appropriate prefix for matrix parameter elements when converted to a string.
+        /// </summary>
+        /// <remarks>For a scattering parameters matrix, for example, this should return 'S' so that indicies are prefixed with "S12".</remarks>
+        protected abstract string MatrixPrefix { get; }
 
         #region Constructors
+        /// <summary>
+        /// Creates a new <see cref="NetworkParametersCollection{TMatrix}"/> from an existing <see cref="DenseMatrix"/>.
+        /// </summary>
+        /// <param name="numPorts">The numer of ports of the device represented by this matrix.</param>
+        /// <param name="matrix">The existing matrix to use.</param>
         protected NetworkParametersMatrix(int numPorts, DenseMatrix matrix)
         {
             NumPorts = numPorts;
-            this.matrix = matrix;
+            this.Matrix = matrix;
         }
+
         /// <summary>
         /// Creates a new <see cref="NetworkParametersMatrix"/> with the specified number of ports.
         /// </summary>
@@ -79,7 +95,7 @@ namespace MicrowaveNetworks
         {
             NumPorts = numPorts;
             //parametersMatrix = new Dictionary<(int destPort, int sourcePort), NetworkParameter>(m_size);
-            matrix = DenseMatrix.Create(numPorts, numPorts, Complex.One);
+            Matrix = DenseMatrix.Create(numPorts, numPorts, Complex.One);
         }
         /// <summary>
         /// Creates a new <see cref="NetworkParametersMatrix"/> from a flattened list of <see cref="NetworkParameter"/> structures.
@@ -118,7 +134,7 @@ namespace MicrowaveNetworks
 
             NumPorts = ports;
             //parametersMatrix = new Dictionary<(int destPort, int sourcePort), NetworkParameter>();
-            matrix = DenseMatrix.Create(ports, ports, Complex.Zero);
+            Matrix = DenseMatrix.Create(ports, ports, Complex.Zero);
 
 
             int i = 0;
@@ -126,7 +142,7 @@ namespace MicrowaveNetworks
             {
                 int row = index.DestinationPort - 1;
                 int column = index.SourcePort - 1;
-                matrix[row, column] = flattenedList[i];
+                Matrix[row, column] = flattenedList[i];
                 i++;
             });
         }
@@ -146,13 +162,13 @@ namespace MicrowaveNetworks
                 // Rather than filling the whole matrix with the unity parameter, simply return unity whenever the value for the requested
                 // port has not been set.
                 else return NetworkParameter.One;*/
-                return matrix[destinationPort - 1, sourcePort - 1];
+                return Matrix[destinationPort - 1, sourcePort - 1];
             }
             set
             {
                 ValidateIndicies(destinationPort, sourcePort);
                 //parametersMatrix[(destinationPort, sourcePort)] = value;
-                matrix[destinationPort - 1, sourcePort - 1] = value;
+                Matrix[destinationPort - 1, sourcePort - 1] = value;
             }
         }
                
@@ -164,18 +180,17 @@ namespace MicrowaveNetworks
         /// <exception cref="ArgumentException">Thrown when <typeparamref name="T"/> is <see cref="NetworkParametersMatrix"/> rather than a child class.</exception>
         public T ConvertParameterType<T>() where T : NetworkParametersMatrix
         {
+            // Unfortunate workaround to the fact that you can't directly switch on a System.Type object; switch on a condition that is always
+            // true with a guard clause.
             Type parameterType = typeof(T);
-            switch (true)
+            return 0 switch
             {
-                case true when parameterType == typeof(ScatteringParametersMatrix):
-                    return (T)(NetworkParametersMatrix)ToSParameters();
-                case true when parameterType == typeof(TransferParametersMatrix):
-                    return (T)(NetworkParametersMatrix)ToTParameters();
-                case true when parameterType == typeof(NetworkParametersMatrix):
-                    throw new ArgumentException($"Conversion type must be a child class of {nameof(NetworkParametersMatrix)}.", nameof(parameterType));
-                default:
-                    throw new NotImplementedException();
+                0 when parameterType == typeof(ScatteringParametersMatrix) => (T)(NetworkParametersMatrix)ToSParameters(),
+                0 when parameterType == typeof(TransferParametersMatrix) => (T)(NetworkParametersMatrix)ToTParameters(),
+                0 when parameterType == typeof(NetworkParametersMatrix)  => throw new ArgumentException($"Conversion type must be a child class of {nameof(NetworkParametersMatrix)}.", nameof(parameterType)),
+                _ => throw new NotImplementedException(),
             };
+            ;
         }
 
         #region Overrides and Interface Implementations
@@ -202,6 +217,8 @@ namespace MicrowaveNetworks
             return Utilities.ForEachParameter(NumPorts, format, index =>
                                     new PortNetworkParameterPair(index, this[index.DestinationPort, index.SourcePort]));
         }
+
+        /// <inheritdoc/>
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
@@ -211,7 +228,7 @@ namespace MicrowaveNetworks
 
                 // When row starts, add a new '['
                 if (source == 1) sb.Append('[');
-                sb.Append($"S{dest}{source}: {this[dest, source]}");
+                sb.Append($"{MatrixPrefix}{dest}{source}: {this[dest, source]}");
                 // End of row - start the next
                 if (source == NumPorts) sb.AppendLine("]");
                 else sb.Append('\t');
@@ -225,7 +242,7 @@ namespace MicrowaveNetworks
         /// Returns the determinant of the matrix.
         /// </summary>
         /// <returns></returns>
-        protected NetworkParameter Determinant() => matrix.Determinant();
+        protected NetworkParameter Determinant() => Matrix.Determinant();
         private void ValidateIndicies(int destinationPort, int sourcePort)
         {
             bool invalid = false;
@@ -246,7 +263,17 @@ namespace MicrowaveNetworks
                 throw new IndexOutOfRangeException($"Invalid index specified for {paramName}. Valid values are from 1 to {NumPorts}.");
             }
         }
+
+        /// <summary>
+        /// Converts the matrix to a <see cref="ScatteringParametersMatrix"/>.
+        /// </summary>
+        /// <returns>A new <see cref="ScatteringParametersMatrix"/>, or the existing object if already of the correct type.</returns>
         protected abstract ScatteringParametersMatrix ToSParameters();
+
+        /// <summary>
+        /// Converts the matrix to a <see cref="TransferParametersMatrix"/>.
+        /// </summary>
+        /// <returns>A new <see cref="TransferParametersMatrix"/>, or the existing object if already of the correct type.</returns>
         protected abstract TransferParametersMatrix ToTParameters();
         #endregion
     }

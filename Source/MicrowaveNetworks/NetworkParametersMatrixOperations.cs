@@ -29,28 +29,26 @@ namespace MicrowaveNetworks
         /// <returns>A single composite <see cref="NetworkParameter"/> describing the network from the ports of the first device to the ports of the final device.</returns>
         public static TMatrix Cascade<TMatrix>(IEnumerable<TMatrix> matrices) where TMatrix : NetworkParametersMatrix
         {
-            if (matrices == null || !matrices.Any()) throw new ArgumentException(nameof(matrices));
+            if (matrices == null || !matrices.Any()) throw new ArgumentException("Argument cannot be null or empty", nameof(matrices));
 
-            using (IEnumerator<NetworkParametersMatrix> enumer = matrices.GetEnumerator())
+            using IEnumerator<NetworkParametersMatrix> enumer = matrices.GetEnumerator();
+            enumer.MoveNext();
+
+            NetworkParametersMatrix p1 = enumer.Current;
+
+            while (enumer.MoveNext())
             {
-                enumer.MoveNext();
+                NetworkParametersMatrix p2 = enumer.Current;
 
-                NetworkParametersMatrix p1 = enumer.Current;
+                TransferParametersMatrix t1 = p1.ToTParameters();
+                TransferParametersMatrix t2 = p2.ToTParameters();
 
-                while (enumer.MoveNext())
-                {
-                    NetworkParametersMatrix p2 = enumer.Current;
+                TransferParametersMatrix composite = t1 * t2;
 
-                    TransferParametersMatrix t1 = p1.ToTParameters();
-                    TransferParametersMatrix t2 = p2.ToTParameters();
-
-                    TransferParametersMatrix composite = t1 * t2;
-
-                    p1 = composite;
-                }
-
-                return p1.ConvertParameterType<TMatrix>();
+                p1 = composite;
             }
+
+            return p1.ConvertParameterType<TMatrix>();
         }
     }
 }

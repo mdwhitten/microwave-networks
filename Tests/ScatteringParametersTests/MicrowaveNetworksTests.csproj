@@ -3,7 +3,9 @@
     <TargetFrameworks>netstandard2.0;net472;net5.0</TargetFrameworks>
     <LangVersion>8.0</LangVersion>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <UserSecretsId>97d9cbad-ce09-4eda-ad45-43b2ed9fe7d7</UserSecretsId>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="3.0.3">

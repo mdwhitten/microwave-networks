@@ -24,6 +24,11 @@ namespace MicrowaveNetworks
         /// <returns>The <see cref="NetworkParameter"/> measured or derived at <paramref name="frequency"/> at index [<paramref name="destinationPort"/>, <paramref name="sourcePort"/>].</returns>
         NetworkParameter this[double frequency, int destinationPort, int sourcePort] { get; set; }
 
+        /// <summary>Finds the <see cref="NetworkParametersMatrix"/> at or nearest to <paramref name="frequency"/>.</summary>
+        /// <param name="frequency">The frequency to locate in Hz.</param>
+        /// <returns>The <see cref="NetworkParametersMatrix"/> at or nearest to <paramref name="frequency"/>.</returns>
+        NetworkParametersMatrix Nearest(double frequency);
+
         /// <summary>Gets all frequencies defined in this collection in Hz.</summary>
         IReadOnlyCollection<double> Frequencies { get; }
         /// <summary>Gets all the network parameters defined in this collection.</summary>

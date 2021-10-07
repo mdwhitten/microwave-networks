@@ -14,14 +14,15 @@ namespace MicrowaveNetworks.Touchstone
         /// <summary>Specifies frequency units in GHz.</summary>
         GHz = 9
     };
-    public static class FrequencyUnitUtilities
+
+    internal static class FrequencyUnitUtilities
     {
         /// <summary>
         /// Returns the multiplier that corresponds with a given frequency unit.
         /// </summary>
         /// <param name="unit"></param>
         /// <returns></returns>
-        public static double GetMultiplier(this FrequencyUnit unit) => Math.Pow(10, (int)unit);
+        internal static double GetMultiplier(this FrequencyUnit unit) => Math.Pow(10, (int)unit);
     }
 
     /// <summary>Represents the valid network parameter types as defined in the Touchstone specification.</summary>

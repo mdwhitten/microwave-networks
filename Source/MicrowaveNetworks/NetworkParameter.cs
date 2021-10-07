@@ -80,39 +80,106 @@ namespace MicrowaveNetworks
         #endregion
 
         #region Operators
+        /// <summary>
+        /// Converts a <see cref="NetworkParameter"/> to a <see cref="Complex"/> number.
+        /// </summary>
+        /// <param name="parameter">The parameter to convert.</param>
         public static implicit operator Complex(NetworkParameter parameter) => parameter.complex;
+
+        /// <summary>
+        /// Converts a <see cref="Complex"/> number to a <see cref="NetworkParameter"/>.
+        /// </summary>
+        /// <param name="complex">The complex number to convert.</param>
         public static implicit operator NetworkParameter(Complex complex) => new NetworkParameter(complex);
 
+        /// <summary>
+        /// Compares two <see cref="NetworkParameter"/> values for equality.
+        /// </summary>
+        /// <param name="left">The left <see cref="NetworkParameter"/>.</param>
+        /// <param name="right">The right <see cref="NetworkParameter"/>.</param>
+        /// <returns>True if <paramref name="left"/> equals <paramref name="right"/>; otherwise false.</returns>
         public static bool operator ==(NetworkParameter left, NetworkParameter right) => left.Equals(right);
+
+        /// <summary>
+        /// Compares two <see cref="NetworkParameter"/> values for inequality.
+        /// </summary>
+        /// <param name="left">The left <see cref="NetworkParameter"/>.</param>
+        /// <param name="right">The right <see cref="NetworkParameter"/>.</param>
+        /// <returns>True if <paramref name="left"/> does not equal <paramref name="right"/>; otherwise false.</returns>
         public static bool operator !=(NetworkParameter left, NetworkParameter right) => !left.Equals(right);
 
+        /// <summary>
+        /// Returns the additive inverse of a specified network parameter.
+        /// </summary>
+        /// <param name="param">The network parameter.</param>
+        /// <returns>The result of the multiplying <see cref="Real"/> and <see cref="Imaginary"/> by -1.</returns>
         public static NetworkParameter operator -(NetworkParameter param) => -param.complex;
+
+        /// <summary>
+        /// Adds two <see cref="NetworkParameter"/> values.
+        /// </summary>
+        /// <param name="left">The first value to add.</param>
+        /// <param name="right">The second value to add.</param>
+        /// <returns>The sum of left and right.</returns>
         public static NetworkParameter operator +(NetworkParameter left, NetworkParameter right) => left.complex + right.complex;
+
+        /// <summary>
+        /// Subtracts two <see cref="NetworkParameter"/> values.
+        /// </summary>
+        /// <param name="left">The first value to subtract.</param>
+        /// <param name="right">The second value to subtract.</param>
+        /// <returns>The result of subtracting right from left.</returns>
         public static NetworkParameter operator -(NetworkParameter left, NetworkParameter right) => left.complex - right.complex;
+
+        /// <summary>
+        /// Multiplies two <see cref="NetworkParameter"/> values.
+        /// </summary>
+        /// <param name="left">The first value to multiply.</param>
+        /// <param name="right">The product of left and right.</param>
+        /// <returns>The product of left and right.</returns>
         public static NetworkParameter operator *(NetworkParameter left, NetworkParameter right) => left.complex * right.complex;
+
+        /// <summary>
+        /// Divides a <see cref="NetworkParameter"/> value by another <see cref="NetworkParameter"/> value.
+        /// </summary>
+        /// <param name="left">The value to be divided.</param>
+        /// <param name="right">The product of left and right.</param>
+        /// <returns>The result of dividing left by right.</returns>
         public static NetworkParameter operator /(NetworkParameter left, NetworkParameter right) => left.complex / right.complex;
         #endregion
 
         #region Overrides
+
+        /// <inheritdoc/>
         public override int GetHashCode() => complex.GetHashCode();
+
+        /// <inheritdoc/>
         public override bool Equals(object obj)
         {
-            switch (obj)
+            return obj switch
             {
-                case NetworkParameter param:
-                    return Equals(param);
-                case Complex complex:
-                    return Equals(complex);
-                default:
-                    return this.complex.Equals(obj);
-            }
+                NetworkParameter param => Equals(param),
+                Complex complex => Equals(complex),
+                _ => complex.Equals(obj),
+            };
         }
+
+        /// <summary>
+        /// Converts the value of the current network parameter to its equivalent string representationin Cartesian form.
+        /// </summary>
+        /// <returns>The string representation of the current instance in Cartesian form.</returns>
         public override string ToString() => complex.ToString();
+
+        /// 
         public string ToString(string format) => complex.ToString(format);
         #endregion
 
         #region Interface Implementations
+
+        /// <inheritdoc/>
         public bool Equals(Complex other) => complex.Equals(other);
+
+        /// <inheritdoc/>
         public bool Equals(NetworkParameter other) => complex.Equals(other.complex);
         #endregion
     }
