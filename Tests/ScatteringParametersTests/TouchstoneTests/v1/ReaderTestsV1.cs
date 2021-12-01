@@ -34,21 +34,20 @@ namespace MicrowaveNetworksTests.TouchstoneTests
         public void TestReadOnePort()
         {
             INetworkParametersCollection coll = default;
-            FluentActions.Invoking(() => coll = FromText(SampleFiles.V1.OnePort)).Should().NotThrow();
+            FluentActions.Invoking(() => coll = FromText(SampleFiles.OnePort_v1)).Should().NotThrow();
             coll.NumberOfPorts.Should().Be(1);
-            string tempPath = Path.GetTempFileName();
         }
         [TestMethod]
         public void TestReadFourPort()
         {
             INetworkParametersCollection coll = default;
-            FluentActions.Invoking(() => coll = FromText(SampleFiles.V1.FourPort)).Should().NotThrow();
+            FluentActions.Invoking(() => coll = FromText(SampleFiles.FourPort_v1)).Should().NotThrow();
             coll.NumberOfPorts.Should().Be(4);
         }
         [TestMethod]
         public void TestHeaderParsing()
         {
-            foreach ((string header, TouchstoneOptions options) in SampleFiles.V1.HeaderMaps)
+            foreach ((string header, TouchstoneOptions options) in TestCases.V1.HeaderMaps)
             {
                 var reader = OpenReaderFromText(header);
                 reader.Options.Should().BeEquivalentTo(options);

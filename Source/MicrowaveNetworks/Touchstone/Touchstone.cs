@@ -147,6 +147,9 @@ namespace MicrowaveNetworks.Touchstone
             StringBuilder sb = new StringBuilder();
 
             using TouchstoneWriter writer = TouchstoneWriter.Create(sb);
+            writer.Options = Options;
+            writer.Keywords = Keywords;
+
             foreach (var data in NetworkParameters)
             {
                 writer.WriteData(data);

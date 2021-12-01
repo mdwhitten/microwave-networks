@@ -13,8 +13,8 @@ namespace MicrowaveNetworks.Touchstone.IO
     /// <typeparam name="T"></typeparam>
     internal static class TouchstoneEnumMap<T> where T : Enum
     {
-        private static Dictionary<T, string> fieldNameLookup;
-        private static Dictionary<string, T> valueLookup;
+        private static readonly Dictionary<T, string> fieldNameLookup;
+        private static readonly Dictionary<string, T> valueLookup;
 
         static TouchstoneEnumMap()
         {

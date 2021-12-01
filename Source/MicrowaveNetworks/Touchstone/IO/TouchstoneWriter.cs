@@ -206,12 +206,12 @@ namespace MicrowaveNetworks.Touchstone.IO
             string columnPad = string.Empty;
             if (settings.UnifiedColumnWidth)
             {
-                width = settings.ColumnWidth + ":";
-                frequencyWidth = -settings.ColumnWidth + ":";
+                width = "," + settings.ColumnWidth;
+                frequencyWidth = "," + (-settings.ColumnWidth);
                 columnPad = string.Empty.PadRight(settings.ColumnWidth);
             }
-            string compositeFormatString = $"{{0,{width}{formatString}}}";
-            string frequencyCompositeString = $"{{0,{frequencyWidth}{formatString}}}";
+            string compositeFormatString = $"{{0{width}:{formatString}}}";
+            string frequencyCompositeString = $"{{0{frequencyWidth}:{formatString}}}";
 
             int numPorts = matrix.NumPorts;
             ListFormat format = core.GetListFormat(numPorts);

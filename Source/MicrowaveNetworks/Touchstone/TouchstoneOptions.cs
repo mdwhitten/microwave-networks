@@ -16,5 +16,10 @@
         /// <summary>Specifies the reference resistance in ohms, where <see cref="Resistance"/> is a real, positive number of ohms.</summary>
         [TouchstoneParameter("R")]
         public float Resistance = 50;
+
+        /// <summary>
+        /// Returns a new <see cref="TouchstoneOptions"/> with default values according to the specification.
+        /// </summary>
+        public static TouchstoneOptions Default = new TouchstoneOptions();
     }
 }
