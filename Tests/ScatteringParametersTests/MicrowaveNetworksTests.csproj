@@ -26,4 +26,17 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Source\MicrowaveNetworks\MicrowaveNetworks.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Update="TouchstoneTests\SampleFiles.Designer.cs">
+      <DesignTime>True</DesignTime>
+      <AutoGen>True</AutoGen>
+      <DependentUpon>SampleFiles.resx</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Update="TouchstoneTests\SampleFiles.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>SampleFiles.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+  </ItemGroup>
 </Project>
