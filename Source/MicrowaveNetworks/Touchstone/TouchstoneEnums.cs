@@ -1,9 +1,11 @@
-﻿using System;
+﻿using MicrowaveNetworks.Matrices;
+using MicrowaveNetworks.Touchstone.Internal;
+using System;
 
 namespace MicrowaveNetworks.Touchstone
 {
     /// <summary>Specifies the unit of frequency in the Touchstone file.</summary>
-    public enum FrequencyUnit
+    public enum TouchstoneFrequencyUnit
     {
         /// <summary>Specifies frequency units in Hz.</summary>
         Hz = 0,
@@ -15,14 +17,32 @@ namespace MicrowaveNetworks.Touchstone
         GHz = 9
     };
 
-    internal static class FrequencyUnitUtilities
+    internal static class TouchstoneEnumExtensions
     {
         /// <summary>
         /// Returns the multiplier that corresponds with a given frequency unit.
         /// </summary>
         /// <param name="unit"></param>
         /// <returns></returns>
-        internal static double GetMultiplier(this FrequencyUnit unit) => Math.Pow(10, (int)unit);
+        internal static double GetMultiplier(this TouchstoneFrequencyUnit unit) => Math.Pow(10, (int)unit);
+
+        internal static ParameterType GetTouchstoneParameterType(this INetworkParametersCollection collection)
+        {
+            return collection switch
+            {
+                NetworkParametersCollection<ScatteringParametersMatrix> _ => ParameterType.Scattering,
+                _ => throw new NotImplementedException()
+            };
+        }
+
+        internal static ParameterType GetTouchstoneParameterType(this NetworkParametersMatrix collection)
+        {
+            return collection switch
+            {
+                ScatteringParametersMatrix _ => ParameterType.Scattering,
+                _ => throw new NotImplementedException()
+            };
+        }
     }
 
     /// <summary>Represents the valid network parameter types as defined in the Touchstone specification.</summary>
@@ -44,8 +64,9 @@ namespace MicrowaveNetworks.Touchstone
         [TouchstoneParameter("G")]
         HybridG
     }
+
     /// <summary>Represents the valid format types of the network parameter data pairs as defined in the Touchstone specification.</summary>
-    public enum FormatType
+    public enum TouchstoneDataFormat
     {
         /// <summary>Decibel-angle (DB)</summary>
         [TouchstoneParameter("DB")]
@@ -58,7 +79,7 @@ namespace MicrowaveNetworks.Touchstone
         RealImaginary
     }
     /// <summary>Represents valid version values for the Touchstone file as defined in the specification.</summary>
-    public enum FileVersion
+    public enum TouchstoneFileVersion
     {
         /// <summary>File format is based on the 1.0 specification.</summary>
         One,

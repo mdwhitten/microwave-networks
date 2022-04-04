@@ -23,42 +23,29 @@ namespace MicrowaveNetworks.Touchstone
     public class Touchstone
     {
         /// <summary>
-        /// Gets or sets the <see cref="TouchstoneOptions"/> present in the Touchstone file.
+        /// Gets the <see cref="INetworkParametersCollection"/> representing the network data present in the Touchstone file.
         /// </summary>
-        public TouchstoneOptions Options { get; set; } = new TouchstoneOptions();
-        /// <summary>
-        /// Gets or sets the <see cref="TouchstoneKeywords"/> present in the Touchstone file.
-        /// </summary>
-        /// <remarks>Keywords are only valid when <see cref="TouchstoneKeywords.Version"/> is 2.0.</remarks>
-        public TouchstoneKeywords Keywords { get; set; } = new TouchstoneKeywords();
+        public INetworkParametersCollection NetworkParameters { get; }
 
         /// <summary>
-        /// Gets or sets the <see cref="INetworkParametersCollection"/> representing the network data present in the Touchstone file.
+        /// Gets additional metadata available about the network data identified in the Touchstone file.
         /// </summary>
-        public INetworkParametersCollection NetworkParameters { get; set; }
+        public TouchstoneMetadata Metadata { get; }
+
+        /// <summary>
+        /// Gets the noise parameter data associated with the Touchstone file.
+        /// </summary>
+        public Dictionary<double, TouchstoneNoiseData> NoiseData => throw new NotImplementedException();
 
         #region Constructors
-        internal Touchstone() { }
-
-        /// <summary>Creates a new empty <see cref="Touchstone"/> with a the specified ports and options.</summary>
-        /// <param name="numPorts">The number of ports of the device that the Touchstone file will represent.</param>
-        /// <param name="opts">The <see cref="TouchstoneOptions"/> that will define the format of the resulting file.</param>
-        public Touchstone(int numPorts, TouchstoneOptions opts)
-        {
-            NetworkParameters = opts.Parameter switch
-            {
-                ParameterType.Scattering => new NetworkParametersCollection<ScatteringParametersMatrix>(numPorts),
-                _ => throw new NotImplementedException()
-            };
-            Options = opts;
-        }
         /// <summary>Creates a new Touchstone file from an existing <see cref="INetworkParametersCollection"/> with default settings.</summary>
         /// <param name="parameters">Specifies the network data that will comprise this Touchstone file.</param>
         public Touchstone(INetworkParametersCollection parameters)
         {
             NetworkParameters = parameters;
-            Keywords.NumberOfPorts = parameters.NumberOfPorts;
+            Metadata = new TouchstoneMetadata();
         }
+
         /// <summary>
         /// Creates a new <see cref="Touchstone"/> object by parsing the options, keywords, and network data contained within the specified file.
         /// </summary>
@@ -69,10 +56,9 @@ namespace MicrowaveNetworks.Touchstone
         public Touchstone(string filePath)
         {
             using TouchstoneReader reader = TouchstoneReader.Create(filePath);
-            Options = reader.Options;
-            Keywords = reader.Keywords;
 
             NetworkParameters = reader.ReadToEnd();
+            Metadata = reader.MetaData;
         }
         #endregion
         #region IO
