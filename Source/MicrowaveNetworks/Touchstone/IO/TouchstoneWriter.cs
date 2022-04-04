@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using MicrowaveNetworks.Touchstone.Internal;
 using static MicrowaveNetworks.Internal.Utilities;
 using static MicrowaveNetworks.Touchstone.IO.Constants;
 
@@ -20,28 +21,29 @@ namespace MicrowaveNetworks.Touchstone.IO
                                     , IAsyncDisposable
 #endif
     {
-        /// <summary>The <see cref="TouchstoneOptions"/> that will be used to form the options line in the resulting file as well as the units and data types
-        /// of the network data.</summary>
-        public TouchstoneOptions Options { get; set; } = new TouchstoneOptions();
-        /// <summary>The <see cref="TouchstoneKeywords"/> that will be used to write keywords for <see cref="FileVersion.Two"/> file types.
-        /// For <see cref="FileVersion.One"/> files (the default), these keywords are ignored as they are not valid per the specification.</summary>
-        public TouchstoneKeywords Keywords { get; set; } = new TouchstoneKeywords();
-        /// <summary>The cancellation token to cancel operations if using the asynchronous write functions.</summary>
-        public CancellationToken CancelToken { get; set; } = default;
-
         private TextWriter Writer { get; set; }
 
         readonly TouchstoneWriterSettings settings;
+        readonly TouchstoneOptions options;
         bool headerWritten;
         bool columnsWritten;
         TouchstoneWriterCore core;
 
         private static readonly FieldNameLookup<TouchstoneKeywords> keywordLookup = new FieldNameLookup<TouchstoneKeywords>();
 
-        private TouchstoneWriter(TextWriter writer, TouchstoneWriterSettings settings)
+        private TouchstoneWriter(TextWriter writer, TouchstoneMetadata metadata, TouchstoneWriterSettings settings)
         {
             this.settings = settings ?? new TouchstoneWriterSettings();
-            this.Writer = writer ?? throw new ArgumentNullException(nameof(writer));
+            Writer = writer ?? throw new ArgumentNullException(nameof(writer));
+
+            options = new TouchstoneOptions
+            {
+                Format = settings.DataFormat,
+                FrequencyUnit = settings.FrequencyUnit,
+                Parameter = metadata.ParameterType,
+                Resistance = metadata.Resistance
+            };
+
         }
 
         #region Static Constructors
@@ -115,9 +117,9 @@ namespace MicrowaveNetworks.Touchstone.IO
             StringBuilder sb = new StringBuilder();
             sb.Append(OptionChar);
 
-            string frequencyUnit = TouchstoneEnumMap<FrequencyUnit>.ToTouchstoneValue(options.FrequencyUnit);
+            string frequencyUnit = TouchstoneEnumMap<TouchstoneFrequencyUnit>.ToTouchstoneValue(options.FrequencyUnit);
             string parameter = TouchstoneEnumMap<ParameterType>.ToTouchstoneValue(options.Parameter);
-            string format = TouchstoneEnumMap<FormatType>.ToTouchstoneValue(options.Format);
+            string format = TouchstoneEnumMap<TouchstoneDataFormat>.ToTouchstoneValue(options.Format);
             string resistance = $"{ResistanceChar} {options.Resistance:g}";
 
             return string.Join(" ", OptionChar, frequencyUnit, parameter, format, resistance);
@@ -141,15 +143,15 @@ namespace MicrowaveNetworks.Touchstone.IO
             string description1 = null, description2 = null;
             switch (Options.Format)
             {
-                case FormatType.DecibelAngle:
+                case TouchstoneDataFormat.DecibelAngle:
                     description1 = "Mag (dB)";
                     description2 = "Angle (deg)";
                     break;
-                case FormatType.MagnitudeAngle:
+                case TouchstoneDataFormat.MagnitudeAngle:
                     description1 = "Mag";
                     description2 = "Angle (deg)";
                     break;
-                case FormatType.RealImaginary:
+                case TouchstoneDataFormat.RealImaginary:
                     description1 = "Real";
                     description2 = "Imag";
                     break;
@@ -225,15 +227,15 @@ namespace MicrowaveNetworks.Touchstone.IO
             {
                 switch (Options.Format)
                 {
-                    case FormatType.DecibelAngle:
+                    case TouchstoneDataFormat.DecibelAngle:
                         parameters.Add(parameter.Magnitude_dB);
                         parameters.Add(parameter.Phase_deg);
                         break;
-                    case FormatType.MagnitudeAngle:
+                    case TouchstoneDataFormat.MagnitudeAngle:
                         parameters.Add(parameter.Magnitude);
                         parameters.Add(parameter.Phase_deg);
                         break;
-                    case FormatType.RealImaginary:
+                    case TouchstoneDataFormat.RealImaginary:
                         parameters.Add(parameter.Real);
                         parameters.Add(parameter.Imaginary);
                         break;
@@ -288,7 +290,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         #endregion
         #region Public Write Functions
         /// <summary>Writes the <see cref="Options"/> object to the options line in the Touchstone file. If <see cref="TouchstoneKeywords.Version"/> in 
-        /// <see cref="Keywords"/> is <see cref="FileVersion.Two"/>, the keywords will also be written to the file.</summary>
+        /// <see cref="Keywords"/> is <see cref="TouchstoneFileVersion.Two"/>, the keywords will also be written to the file.</summary>
         /// <remarks>This method may only be called once for a file. If it is not called explicitly, the first call to <see cref="WriteData(double, NetworkParametersMatrix)"/>
         /// will implicitly call this method.</remarks>
         public void WriteHeader()
@@ -301,7 +303,7 @@ namespace MicrowaveNetworks.Touchstone.IO
             headerWritten = true;
         }
         /// <summary>Asynchronously writes the <see cref="Options"/> object to the options line in the Touchstone file. If <see cref="TouchstoneKeywords.Version"/> in 
-        /// <see cref="Keywords"/> is <see cref="FileVersion.Two"/>, the keywords will also be written to the file.</summary>
+        /// <see cref="Keywords"/> is <see cref="TouchstoneFileVersion.Two"/>, the keywords will also be written to the file.</summary>
         /// <remarks>This method may only be called once for a file. If it is not called explicitly, the first call to <see cref="WriteDataAsync(double, NetworkParametersMatrix)"/>
         /// will implicitly call this method.</remarks>
         public async Task WriteHeaderAsync()
@@ -351,15 +353,11 @@ namespace MicrowaveNetworks.Touchstone.IO
         {
             if (!headerWritten) await WriteHeaderAsync();
 
-            CancelToken.ThrowIfCancellationRequested();
-
             if (settings.IncludeColumnNames && !columnsWritten)
             {
                 string columns = FormatColumns(matrix.NumPorts);
                 await WriteCommentLineAsync(columns);
                 columnsWritten = true;
-
-                CancelToken.ThrowIfCancellationRequested();
             }
             string line = FormatEntry(frequency, matrix);
             await Writer.WriteLineAsync(line);
@@ -393,7 +391,7 @@ namespace MicrowaveNetworks.Touchstone.IO
                 if (disposing)
                 {
                     // Specification requires an [End] keyword at the end of the file
-                    if (Keywords.Version == FileVersion.Two)
+                    if (Keywords.Version == TouchstoneFileVersion.Two)
                     {
                         Writer?.Write(ControlKeywords.End);
                     }
@@ -416,7 +414,7 @@ namespace MicrowaveNetworks.Touchstone.IO
             if (Writer != null)
             {
                 // Specification requires an [End] keyword at the end of the file
-                if (Keywords.Version == FileVersion.Two)
+                if (Keywords.Version == TouchstoneFileVersion.Two)
                 {
                     await Writer.WriteAsync(ControlKeywords.End);
                 }
@@ -462,8 +460,8 @@ namespace MicrowaveNetworks.Touchstone.IO
             {
                 return parent.Keywords.Version switch
                 {
-                    FileVersion.One => new TouchstoneWriterCoreV1(parent),
-                    FileVersion.Two => new TouchstoneWriterCoreV2(parent),
+                    TouchstoneFileVersion.One => new TouchstoneWriterCoreV1(parent),
+                    TouchstoneFileVersion.Two => new TouchstoneWriterCoreV2(parent),
                     _ => throw new NotImplementedException(),
                 };
             }
@@ -484,12 +482,12 @@ namespace MicrowaveNetworks.Touchstone.IO
 
             public override void WriteHeader()
             {
-                string options = FormatOptions(tsWriter.Options);
+                string options = FormatOptions(tsWriter.options);
                 tsWriter.Writer.WriteLine(options);
             }
             public override async Task WriteHeaderAsync()
             {
-                string options = FormatOptions(tsWriter.Options);
+                string options = FormatOptions(tsWriter.options);
                 await tsWriter.Writer.WriteLineAsync(options);
             }
 

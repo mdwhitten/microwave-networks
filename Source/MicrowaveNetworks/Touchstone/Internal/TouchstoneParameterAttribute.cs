@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MicrowaveNetworks.Touchstone
+namespace MicrowaveNetworks.Touchstone.Internal
 {
     internal class TouchstoneParameterAttribute : Attribute
     {

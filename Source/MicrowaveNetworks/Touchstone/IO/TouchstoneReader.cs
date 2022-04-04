@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.IO;
 using System.Reflection;
 using MicrowaveNetworks.Matrices;
+using MicrowaveNetworks.Touchstone.Internal;
 
 namespace MicrowaveNetworks.Touchstone.IO
 {
@@ -20,6 +21,8 @@ namespace MicrowaveNetworks.Touchstone.IO
         /// <summary>Gets the <see cref="TouchstoneOptions"/> parameters parsed from the options line in the Touchstone file.</summary>
         public TouchstoneOptions Options { get; }
 
+        public TouchstoneMetadata MetaData { get; }
+
         private static readonly FieldNameLookup<TouchstoneKeywords> keywordLookup = new FieldNameLookup<TouchstoneKeywords>();
         private static readonly string resistanceSignifier = GetTouchstoneFieldName<TouchstoneOptions>(nameof(TouchstoneOptions.Resistance));
         private static readonly string referenceKeywordName = GetTouchstoneFieldName<TouchstoneKeywords>(nameof(TouchstoneKeywords.Reference));
@@ -29,7 +32,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         private readonly TouchstoneReaderSettings settings;
         private int lineNumber;
         private readonly TouchstoneReaderCore coreReader;
-
+        
 
         private TouchstoneReader(TextReader reader, TouchstoneReaderSettings settings)
         {
@@ -174,14 +177,14 @@ namespace MicrowaveNetworks.Touchstone.IO
             {
                 string option = enumer.Current;
                 // Format specifies that options can occur in any order
-                if (TouchstoneEnumMap<FrequencyUnit>.ValidTouchstoneName(option))
+                if (TouchstoneEnumMap<TouchstoneFrequencyUnit>.ValidTouchstoneName(option))
                 {
                     //string frequencyUnitName = frequencyUnitLookup.Value[option];
-                    Options.FrequencyUnit = TouchstoneEnumMap<FrequencyUnit>.FromTouchstoneValue(option);
+                    Options.FrequencyUnit = TouchstoneEnumMap<TouchstoneFrequencyUnit>.FromTouchstoneValue(option);
                 }
-                else if (TouchstoneEnumMap<FormatType>.ValidTouchstoneName(option))
+                else if (TouchstoneEnumMap<TouchstoneDataFormat>.ValidTouchstoneName(option))
                 {
-                    Options.Format = TouchstoneEnumMap<FormatType>.FromTouchstoneValue(option);
+                    Options.Format = TouchstoneEnumMap<TouchstoneDataFormat>.FromTouchstoneValue(option);
                 }
                 else if (TouchstoneEnumMap<ParameterType>.ValidTouchstoneName(option))
                 {
@@ -237,13 +240,13 @@ namespace MicrowaveNetworks.Touchstone.IO
                 NetworkParameter param = new NetworkParameter();
                 switch (Options.Format)
                 {
-                    case FormatType.DecibelAngle:
+                    case TouchstoneDataFormat.DecibelAngle:
                         param = NetworkParameter.FromPolarDecibelDegree(val1, val2);
                         break;
-                    case FormatType.MagnitudeAngle:
+                    case TouchstoneDataFormat.MagnitudeAngle:
                         param = NetworkParameter.FromPolarDegree(val1, val2);
                         break;
-                    case FormatType.RealImaginary:
+                    case TouchstoneDataFormat.RealImaginary:
                         param = new NetworkParameter(val1, val2);
                         break;
                 }

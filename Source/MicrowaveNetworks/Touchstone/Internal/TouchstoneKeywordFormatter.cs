@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace MicrowaveNetworks.Touchstone
+namespace MicrowaveNetworks.Touchstone.Internal
 {
 
 
