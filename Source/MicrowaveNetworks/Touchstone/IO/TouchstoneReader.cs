@@ -56,8 +56,17 @@ namespace MicrowaveNetworks.Touchstone.IO
         {
             if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException(nameof(filePath));
             if (!File.Exists(filePath)) throw new FileNotFoundException("File not found", filePath);
+            
             StreamReader reader = new StreamReader(filePath);
-            return new TouchstoneReader(reader, settings);
+            try
+            {
+                return new TouchstoneReader(reader, settings);
+            }
+            catch
+            {
+                reader.Dispose();
+                throw;
+            }
         }
         /// <summary>
         /// Creates a new <see cref="TouchstoneReader"/> with the specified text reader.
