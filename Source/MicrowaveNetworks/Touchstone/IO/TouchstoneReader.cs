@@ -170,7 +170,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         }
         private void ParseOption(string line)
         {
-            string[] options = Regex.Split(line, @"\s");
+            string[] options = Regex.Split(line, @"\s+");
 
             // Skip the first element since it will still contain the "#"
             IEnumerable<string> optionsEnumerable = options.Skip(1);

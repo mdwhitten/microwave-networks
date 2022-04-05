@@ -16,6 +16,14 @@ namespace MicrowaveNetworksTests.TouchstoneTests
                     Resistance = 75,
                     Format = FormatType.MagnitudeAngle
                 }),
+                // Validates spacing with one or more whitespace characters
+                ("#   MHz   S  MA R\t75", new TouchstoneOptions
+                {
+                    FrequencyUnit = FrequencyUnit.MHz,
+                    Parameter = ParameterType.Scattering,
+                    Resistance = 75,
+                    Format = FormatType.MagnitudeAngle
+                }),
                 ("# R 50 Y Hz DB", new TouchstoneOptions
                 {
                     FrequencyUnit = FrequencyUnit.Hz,
