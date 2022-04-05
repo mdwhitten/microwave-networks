@@ -21,7 +21,7 @@ jobs:
       - uses: deepakputhraya/action-branch-name@v1.0.0
         with:
           # Regex to validate the branch name - copied from http://semver.org
-          regex: ^v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
+          regex: v?(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-((?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+([0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$
           # Comma separated list of prefix that must be used in every branch. eg: feature,hotfix,JIRA-
           allowed_prefixes: release,hotfix
           # Comma separated list of branch names to ignore. eg: master,develop
