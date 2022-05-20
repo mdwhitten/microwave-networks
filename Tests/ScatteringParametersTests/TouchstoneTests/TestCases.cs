@@ -9,6 +9,7 @@ namespace MicrowaveNetworksTests.TouchstoneTests
         {
             public static List<(string, TouchstoneOptions)> HeaderMaps = new List<(string, TouchstoneOptions)>()
             {
+                // Standard complete header
                 ("# MHz S MA R 75", new TouchstoneOptions
                 {
                     FrequencyUnit = FrequencyUnit.MHz,
@@ -24,6 +25,7 @@ namespace MicrowaveNetworksTests.TouchstoneTests
                     Resistance = 75,
                     Format = FormatType.MagnitudeAngle
                 }),
+                // Different ordering #1
                 ("# R 50 Y Hz DB", new TouchstoneOptions
                 {
                     FrequencyUnit = FrequencyUnit.Hz,
@@ -31,6 +33,7 @@ namespace MicrowaveNetworksTests.TouchstoneTests
                     Resistance = 50,
                     Format = FormatType.DecibelAngle
                 }),
+                // Different ordering #2
                 ("# G R 50 GHz RI", new TouchstoneOptions
                 {
                     FrequencyUnit = FrequencyUnit.GHz,
@@ -38,11 +41,21 @@ namespace MicrowaveNetworksTests.TouchstoneTests
                     Resistance = 50,
                     Format = FormatType.RealImaginary
                 }),
+                // Missing some values (valid per spec)
                 ("# R 75", new TouchstoneOptions
                 {
                     Resistance = 75,
                 }),
+                // Missing all values (valid per spec)
                 ("#", new TouchstoneOptions()),
+                // Capitalization that deviates from standard capitalized values
+                ("# hz s dB r 50", new TouchstoneOptions
+                {
+                    FrequencyUnit = FrequencyUnit.Hz,
+                    Parameter = ParameterType.Scattering,
+                    Resistance = 50,
+                    Format = FormatType.DecibelAngle,
+                }),
             };
         }
     }
