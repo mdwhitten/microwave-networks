@@ -170,7 +170,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         }
         private void ParseOption(string line)
         {
-            string[] options = Regex.Split(line, @"\s");
+            string[] options = Regex.Split(line, @"\s+");
 
             // Skip the first element since it will still contain the "#"
             IEnumerable<string> optionsEnumerable = options.Skip(1);
@@ -196,7 +196,7 @@ namespace MicrowaveNetworks.Touchstone.IO
                 {
                     Options.Parameter = TouchstoneEnumMap<ParameterType>.FromTouchstoneValue(option);
                 }
-                else if (option == resistanceSignifier)
+                else if (option.Equals(resistanceSignifier, StringComparison.OrdinalIgnoreCase))
                 {
                     // For resistance, this option is specified in the format of "R [value]"
                     // Hence, we need to actually move the enumerator forward to get the value
