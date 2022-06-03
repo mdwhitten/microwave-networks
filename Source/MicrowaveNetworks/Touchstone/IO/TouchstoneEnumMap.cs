@@ -36,9 +36,11 @@ namespace MicrowaveNetworks.Touchstone.IO
                 else fieldName = names[i];
 
                 T value = (T)values.GetValue(i);
-                fieldNameLookup.Add(value, fieldName);
-                valueLookup.Add(fieldName, value);
 
+                fieldNameLookup.Add(value, fieldName);
+                // Convert string values to upper case so that during later comparison
+                // case issues don't cause a problem.
+                valueLookup.Add(fieldName.ToUpper(), value);
             }
         }
 
@@ -48,13 +50,13 @@ namespace MicrowaveNetworks.Touchstone.IO
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static bool ValidTouchstoneName(string name) => valueLookup.ContainsKey(name);
+        public static bool ValidTouchstoneName(string name) => valueLookup.ContainsKey(name.ToUpper());
         /// <summary>
         /// Returns the appropriate enum type <typeparamref name="T"/> matched to the <paramref name="name"/> value.
         /// </summary>
         /// <param name="name"></param>
         /// <returns></returns>
-        public static T FromTouchstoneValue(string name) => valueLookup[name];
+        public static T FromTouchstoneValue(string name) => valueLookup[name.ToUpper()];
         /// <summary>
         ///  Returns the value of <see cref="TouchstoneParameterAttribute.FieldName"/> if <paramref name="value"/> has
         ///  this attribute. Otherwise, simply returns the name of <paramref name="value"/>.
