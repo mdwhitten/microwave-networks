@@ -187,7 +187,7 @@ namespace MicrowaveNetworks
     {
         public static double ToRad(this double angle_deg) => angle_deg * PI / 180;
         public static double ToDegree(this double angle_rad) => angle_rad * 180 / PI;
-        public static double ToLinear(this double magnitude_dB) => Pow(10, magnitude_dB / 10);
-        public static double FromLinear(this double magnitude) => 10 * Log10(magnitude);
+        public static double ToLinear(this double magnitude_dB) => Pow(10, magnitude_dB / 20);
+        public static double FromLinear(this double magnitude) => 20 * Log10(magnitude);
     }
 }
