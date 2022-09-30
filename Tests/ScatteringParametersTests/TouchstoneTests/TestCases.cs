@@ -76,7 +76,7 @@ namespace MicrowaveNetworksTests.TouchstoneTests
                     FrequencyUnit = FrequencyUnit.MHz,
                     Parameter = ParameterType.Scattering,
                     Resistance = 75,
-                    Reactance = -20,
+                    Reactance = 20,
                     Format = FormatType.MagnitudeAngle
                 }),
             };
