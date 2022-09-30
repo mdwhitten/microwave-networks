@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.IO;
@@ -205,8 +206,13 @@ namespace MicrowaveNetworks.Touchstone.IO
                     {
                         string value = enumer.Current;
 
-                        bool parsed = float.TryParse(value, out float r);
-                        if (parsed) Options.Resistance = r;
+                        bool parsed = TryParseImpedance(value, out float r, out float x);
+
+                        if (parsed)
+                        {
+                            Options.Resistance = r;
+                            Options.Reactance = x;
+                        }
                         else ThrowHelper("Options", "Bad value for resistance");
                     }
                     else ThrowHelper("Options", "No value specified for resistance");
@@ -276,6 +282,28 @@ namespace MicrowaveNetworks.Touchstone.IO
 
             string[] data = Regex.Split(line, @"\s+");
             return new List<string>(data);
+        }
+        private bool TryParseImpedance(string impedance, out float r, out float x)
+        {
+            r = 0;
+            x = 0;
+            bool parsed = float.TryParse(impedance,out r);
+            if (!parsed)
+            {
+                if(impedance.Contains("j"))
+                {
+                    string value = Regex.Replace(impedance, @"[()j]", string.Empty);
+                    int sign = value.Contains("-") ? -1 : 1;
+                    string[] data = Regex.Split(value, @"[+-]");
+                    if (data.Length != 2) return false;
+                    bool parsedR = float.TryParse(data[0], out r);
+                    bool parsedX = float.TryParse(data[1], out x);
+                    x = x*sign;
+                    return parsedR && parsedX;
+                }
+            }
+            return parsed;
+
         }
         #endregion
         #region TextReader Helper Functions

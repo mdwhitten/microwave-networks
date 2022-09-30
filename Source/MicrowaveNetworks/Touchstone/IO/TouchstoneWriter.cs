@@ -118,7 +118,11 @@ namespace MicrowaveNetworks.Touchstone.IO
             string frequencyUnit = TouchstoneEnumMap<FrequencyUnit>.ToTouchstoneValue(options.FrequencyUnit);
             string parameter = TouchstoneEnumMap<ParameterType>.ToTouchstoneValue(options.Parameter);
             string format = TouchstoneEnumMap<FormatType>.ToTouchstoneValue(options.Format);
-            string resistance = $"{ResistanceChar} {options.Resistance:g}";
+            string sign = options.Reactance >= 0 ? "+" : "";
+            string resistance = options.Reactance == 0 ?
+                $"{ResistanceChar} {options.Resistance:g}" :
+                $"{ResistanceChar} ({options.Resistance:g}{sign}{options.Reactance:g}j)";
+
 
             return string.Join(" ", OptionChar, frequencyUnit, parameter, format, resistance);
         }
