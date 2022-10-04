@@ -44,6 +44,7 @@ namespace MicrowaveNetworksTests.TouchstoneTests
             FluentActions.Invoking(() => coll = FromText(SampleFiles.FourPort_v1)).Should().NotThrow();
             coll.NumberOfPorts.Should().Be(4);
         }
+
         [TestMethod]
         public void TestHeaderParsing()
         {
