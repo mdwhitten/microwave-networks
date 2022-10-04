@@ -24,7 +24,7 @@
         /// If the <see cref="TouchstoneParameterAttribute"/> "R" is complex it will be represented by its imaginary part.
         /// Otherwise it is considered to be 0.
         /// </summary>
-        /// <remarks>This parameter is not specified by Touchstone standard while scikit-rf</remarks>
+        /// <remarks>This parameter is not specified by Touchstone standard while scikit-rf has an implementation for it.</remarks>
         [TouchstoneParameter("R")]
         public float Reactance = 0;
 
