@@ -205,8 +205,13 @@ namespace MicrowaveNetworks.Touchstone.IO
                     {
                         string value = enumer.Current;
 
-                        bool parsed = float.TryParse(value, out float r);
-                        if (parsed) Options.Resistance = r;
+                        bool parsed = TryParseImpedance(value, out float r, out float x);
+
+                        if (parsed)
+                        {
+                            Options.Resistance = r;
+                            Options.Reactance = x;
+                        }
                         else ThrowHelper("Options", "Bad value for resistance");
                     }
                     else ThrowHelper("Options", "No value specified for resistance");
@@ -276,6 +281,26 @@ namespace MicrowaveNetworks.Touchstone.IO
 
             string[] data = Regex.Split(line, @"\s+");
             return new List<string>(data);
+        }
+        private bool TryParseImpedance(string impedance, out float r, out float x)
+        {
+            r = 0;
+            x = 0;
+            bool parsed = float.TryParse(impedance,out r);
+            if (!parsed)
+            {
+                Match m = Regex.Match(impedance, @"\((?<r>\d+)(?<sign>[+-])(?<x>\d+)j\)");
+                if (m.Success)
+                {
+                    r = float.Parse(m.Groups["r"].Value);
+                    x = float.Parse(m.Groups["x"].Value);
+                    int sign = m.Groups["sign"].Value.Contains("-") ? -1 : 1;
+                    x *= sign;
+                }
+                return m.Success;
+            }
+            return parsed;
+
         }
         #endregion
         #region TextReader Helper Functions
