@@ -289,17 +289,15 @@ namespace MicrowaveNetworks.Touchstone.IO
             bool parsed = float.TryParse(impedance,out r);
             if (!parsed)
             {
-                if(impedance.Contains("j"))
+                Match m = Regex.Match(impedance, @"\((?<r>\d+)(?<sign>[+-])(?<x>\d+)j\)");
+                if (m.Success)
                 {
-                    string value = Regex.Replace(impedance, @"[()j]", string.Empty);
-                    int sign = value.Contains("-") ? -1 : 1;
-                    string[] data = Regex.Split(value, @"[+-]");
-                    if (data.Length != 2) return false;
-                    bool parsedR = float.TryParse(data[0], out r);
-                    bool parsedX = float.TryParse(data[1], out x);
-                    x = x*sign;
-                    return parsedR && parsedX;
+                    r = float.Parse(m.Groups["r"].Value);
+                    x = float.Parse(m.Groups["x"].Value);
+                    int sign = m.Groups["sign"].Value.Contains("-") ? -1 : 1;
+                    x *= sign;
                 }
+                return m.Success;
             }
             return parsed;
 
