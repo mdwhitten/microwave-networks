@@ -118,7 +118,7 @@ namespace MicrowaveNetworks.Touchstone.IO
             string frequencyUnit = TouchstoneEnumMap<FrequencyUnit>.ToTouchstoneValue(options.FrequencyUnit);
             string parameter = TouchstoneEnumMap<ParameterType>.ToTouchstoneValue(options.Parameter);
             string format = TouchstoneEnumMap<FormatType>.ToTouchstoneValue(options.Format);
-            string sign = options.Reactance >= 0 ? "+" : "";
+            string sign = options.Reactance >= 0 ? "+" : ""; // in case of negative number the "-" is already part of the Reactance value
             string resistance = options.Reactance == 0 ?
                 $"{ResistanceChar} {options.Resistance:g}" :
                 $"{ResistanceChar} ({options.Resistance:g}{sign}{options.Reactance:g}j)";
