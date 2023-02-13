@@ -128,7 +128,6 @@ namespace MicrowaveNetworks
         IReadOnlyCollection<NetworkParametersMatrix> INetworkParametersCollection.NetworkParameters => NetworkParameters;
         /// <summary>Gets the specific subtype of <see cref="NetworkParametersMatrix"/> represented by this collection.</summary>
         /// <remarks>This collection is often created from a file and so the network parameter matrix type will not be known until after this object is created.</remarks>
-        public Type NetworkParameterType { get; }
         Type INetworkParametersCollection.NetworkParameterType => typeof(TMatrix);
 
         /// <summary>
