@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net472;net5.0;net45</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net472;net5.0;net45;net8.0</TargetFrameworks>
     <LangVersion>8.0</LangVersion>
     <OutputType>Library</OutputType>
     <Authors>Michael Whitten</Authors>
