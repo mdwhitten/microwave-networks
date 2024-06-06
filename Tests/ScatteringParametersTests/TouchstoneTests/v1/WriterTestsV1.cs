@@ -107,8 +107,14 @@ namespace MicrowaveNetworksTests.TouchstoneTests
             {
                 sb.Append($"\t{{{i + 1}:{numericFormat}}}");
             }
+
+#if NET45
+            var prepended = (new double[] { frequency }).Concat(dataLines);
             
+            return string.Format(sb.ToString(), prepended.Cast<object>().ToArray());
+#else
             return string.Format(sb.ToString(), dataLines.Prepend(frequency).Cast<object>().ToArray());
+#endif
         }
     }
 }
