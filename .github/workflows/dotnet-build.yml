@@ -20,19 +20,14 @@ jobs:
       with:
         fetch-depth: 0
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: |
+            5.x
+            8.x
     - name: Restore dependencies
       run: dotnet restore $env:SOURCE
     - name: Build
       run: dotnet build $env:SOURCE --no-restore --configuration Release 
     - name: Test
-      run: dotnet test $env:TESTS --configuration Release
-    #- name: Pack
-    #  run: dotnet pack $env:SOURCE --no-build --configuration Release
-    #- name: Upload 
-    #  uses: actions/upload-artifact@v2
-    #  with:
-    #    name: nuget-package
-    #    path: Source/**/bin/Release/*.nupkg
+      run: dotnet test $env:TESTS --no-build --configuration Release
