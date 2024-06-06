@@ -36,9 +36,11 @@ jobs:
       with:
         fetch-depth: 0
     - name: Setup .NET
-      uses: actions/setup-dotnet@v1
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: |
+            5.x
+            8.x
     - name: Restore dependencies
       run: dotnet restore $env:SOURCE
     - name: Build
