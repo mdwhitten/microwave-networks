@@ -243,6 +243,18 @@ namespace MicrowaveNetworks
         /// </summary>
         /// <returns></returns>
         protected NetworkParameter Determinant() => Matrix.Determinant();
+
+        internal void TriangluarToSymmetric()
+        {
+            var diag = Matrix.Diagonal();
+
+            // Add the transpose to fill the upper or lower half
+            Matrix = (DenseMatrix)(Matrix + Matrix.Transpose());
+
+            // Restore the orginal diaganol since it has been doubled by addition
+            Matrix.SetDiagonal(diag);
+        }
+
         private void ValidateIndicies(int destinationPort, int sourcePort)
         {
             bool invalid = false;

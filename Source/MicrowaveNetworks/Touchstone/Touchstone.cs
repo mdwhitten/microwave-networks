@@ -147,8 +147,17 @@ namespace MicrowaveNetworks.Touchstone
         /// <exception cref="ArgumentNullException"><paramref name="filePath"/> is null.</exception>
         /// <exception cref="FileNotFoundException"><paramref name="filePath"/> is not found.</exception>
         /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="filePath"/>.</exception>
+        public static Touchstone Load(string filePath)
         {
             using TouchstoneReader tsReader = TouchstoneReader.Create(filePath);
+
+            var parameters = tsReader.ReadToEnd();
+
+            return new Touchstone(parameters, tsReader.Resistance);
+           
         }
+
+
+        
     }
 }

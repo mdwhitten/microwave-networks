@@ -7,24 +7,36 @@ using System.IO;
 using System.Reflection;
 using MicrowaveNetworks.Matrices;
 using MicrowaveNetworks.Touchstone.Internal;
+using MicrowaveNetworks.Internal;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace MicrowaveNetworks.Touchstone.IO
 {
     /// <summary>
     /// Provides lower-level support for reading Touchstone files from existing data sources.
     /// </summary>
-    public sealed class TouchstoneReader : IDisposable
+    public sealed partial class TouchstoneReader : IDisposable
 
     {
-        /// <summary>Gets the keywords declared in the Touchstone file if the file version specification is 2.0.</summary>
-        public TouchstoneKeywords Keywords { get; }
-        /// <summary>Gets the <see cref="TouchstoneOptions"/> parameters parsed from the options line in the Touchstone file.</summary>
-        public TouchstoneOptions Options { get; }
+        public List<string> Comments { get; } = new List<string>();
+        /// <summary>
+        /// Specifies the reference resistance in ohms, where <see cref="Resistance"/> is a real, positive number of ohms.
+        /// If the <see cref="TouchstoneParameterAttribute"/> "R" is complex it will be represented by its real part. 
+        /// </summary>
+        public float Resistance { get; private set; }
+        public float Reactance { get; private set; }
 
-        public TouchstoneMetadata MetaData { get; }
+
+        public TouchstoneFileVersion FileVersion { get; private set; }
+
+
+        /// <summary>Gets the <see cref="TouchstoneOptionsLine"/> parameters parsed from the options line in the Touchstone file.</summary>
+        private TouchstoneOptionsLine Options { get; }
+        private TouchstoneKeywords Keywords { get; } = new TouchstoneKeywords();
+
 
         private static readonly FieldNameLookup<TouchstoneKeywords> keywordLookup = new FieldNameLookup<TouchstoneKeywords>();
-        private static readonly string resistanceSignifier = GetTouchstoneFieldName<TouchstoneOptions>(nameof(TouchstoneOptions.Resistance));
+        private static readonly string resistanceSignifier = GetTouchstoneFieldName<TouchstoneOptionsLine>(nameof(TouchstoneOptionsLine.Resistance));
         private static readonly string referenceKeywordName = GetTouchstoneFieldName<TouchstoneKeywords>(nameof(TouchstoneKeywords.Reference));
 
 
@@ -32,14 +44,13 @@ namespace MicrowaveNetworks.Touchstone.IO
         private readonly TouchstoneReaderSettings settings;
         private int lineNumber;
         private readonly TouchstoneReaderCore coreReader;
-        
+
 
         private TouchstoneReader(TextReader reader, TouchstoneReaderSettings settings)
         {
             this.settings = settings ?? new TouchstoneReaderSettings();
             this.reader = reader;
-            Options = new TouchstoneOptions();
-            Keywords = new TouchstoneKeywords();
+            Options = new TouchstoneOptionsLine();
 
             coreReader = TouchstoneReaderCore.Create(this);
         }
@@ -59,7 +70,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         {
             if (string.IsNullOrEmpty(filePath)) throw new ArgumentNullException(nameof(filePath));
             if (!File.Exists(filePath)) throw new FileNotFoundException("File not found", filePath);
-            
+
             StreamReader reader = new StreamReader(filePath);
             try
             {
@@ -123,7 +134,7 @@ namespace MicrowaveNetworks.Touchstone.IO
                         collection = Options.Parameter switch
                         {
                             ParameterType.Scattering => new NetworkParametersCollection<ScatteringParametersMatrix>(numPorts),
-                            _ => throw new NotImplementedException(),
+                            _ => throw new NotImplementedException($"Support for parameter type {Options.Parameter} has not been implemented."),
                         };
                     }
                     collection[frequency] = matrix;
@@ -133,43 +144,20 @@ namespace MicrowaveNetworks.Touchstone.IO
             else throw new ObjectDisposedException(nameof(TouchstoneReader));
         }
         #region Parsing
-        private void ParseKeyword(string line)
+        private (TouchstoneKeywords Keyword, string Value) ParseKeyword(string line)
         {
             var match = Regex.Match(line, @"[(\w+)]\s(\w+)?");
 
             if (!match.Success) ThrowHelper("Keywords", "Bad keyword format");
 
-            // All keywords are of format [Keyword] Value except for the [Reference] keyword, whose data is on a second line after the 
-            // keyword. If the group 2 match is successful, then this keyword follows the primary format.
-            if (match.Groups[2].Success)
+            string keywordName = match.Groups[1].Value;
+            string value = match.Groups[2].Value;
+
+            if (!TouchstoneEnumMap<TouchstoneKeywords>.TryFromTouchstoneValue(keywordName, out TouchstoneKeywords keyword))
             {
-                string keywordName = match.Groups[1].Value;
-                string value = match.Groups[2].Value;
-
-                bool found = keywordLookup.Value.TryGetValue(keywordName, out string fieldName);
-                if (!found) ThrowHelper("Keywords", "Unknown keyword");
-
-                FieldInfo field = typeof(TouchstoneKeywords).GetField(fieldName);
-                object convertedValue = null;
-                try
-                {
-                    convertedValue = Convert.ChangeType(value, field.FieldType);
-                }
-                catch (Exception ex) when (ex is InvalidCastException || ex is FormatException)
-                {
-                    ThrowHelper("Keywords", "Bad keyword value", ex);
-                }
-
-                field.SetValue(Keywords, convertedValue);
+                ThrowHelper("Keywords", "Unknown keyword");
             }
-            // If the second group wasn't found above but this keyword is the [Reference] keyword, try loading the next line expecting the 
-            // reference data.
-            else if (match.Groups[1].Value == referenceKeywordName)
-            {
-                throw new NotImplementedException();
-            }
-            // Any other situation is an error.
-            else ThrowHelper("Keywords", "Invalid keyword format");
+            return (keyword, value);
         }
         private void ParseOption(string line)
         {
@@ -289,7 +277,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         {
             r = 0;
             x = 0;
-            bool parsed = float.TryParse(impedance,out r);
+            bool parsed = float.TryParse(impedance, out r);
             if (!parsed)
             {
                 Match m = Regex.Match(impedance, @"\((?<r>\d+)(?<sign>[+-])(?<x>\d+)j\)");
@@ -322,6 +310,9 @@ namespace MicrowaveNetworks.Touchstone.IO
                         break;
                     // For new lines and comments, skip to the next line
                     case Constants.CommentChar:
+                        Comments.Add(reader.ReadLine());
+                        lineNumber++;
+                        break;
                     case var _ when char.IsWhiteSpace(nextChar):
                         reader.ReadLine();
                         lineNumber++;
@@ -347,6 +338,9 @@ namespace MicrowaveNetworks.Touchstone.IO
                         break;
                     // For new lines and comments, skip to the next line
                     case Constants.CommentChar:
+                        Comments.Add(await reader.ReadLineAsync());
+                        lineNumber++;
+                        break;
                     case var _ when char.IsWhiteSpace(nextChar):
                         await reader.ReadLineAsync();
                         lineNumber++;
@@ -370,167 +364,123 @@ namespace MicrowaveNetworks.Touchstone.IO
         }
         #endregion
 
-        #region Core Reader Classes
-        abstract class TouchstoneReaderCore
+
+        #region Static Functions
+        /// <summary>
+        /// Enumerates the frequency-dependent network parameter data from the specified file.
+        /// </summary>
+        /// <param name="filePath">The Touchstone file to load.</param>
+        /// <returns>All the network data loaded from the file.</returns>
+        /// <remarks>Unlike <see cref="ReadAllData(string)"/>, this method returns an enumerable sequence of <see cref="FrequencyParametersPair"/> objects which are 
+        /// loaded into memory one at a time. This is useful when using LINQ queries (such as limiting the number of frequencies to load) or passing the sequence
+        /// to a collection to initialize. This avoids creating the whole collection in memory.</remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="filePath"/> is null.</exception>
+        /// <exception cref="FileNotFoundException"><paramref name="filePath"/> is not found.</exception>
+        /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="filePath"/>.</exception>
+        public static IEnumerable<FrequencyParametersPair> ReadData(string filePath)
         {
-            protected TouchstoneReader tsReader;
-
-            protected TouchstoneReaderCore(TouchstoneReader reader)
+            using TouchstoneReader tsReader = TouchstoneReader.Create(filePath);
+            while (tsReader.Read() is FrequencyParametersPair pair)
             {
-                this.tsReader = reader;
-            }
-            protected abstract void ReadHeader(string currentLine);
-
-            public abstract FrequencyParametersPair? ReadNextMatrix();
-            //protected abstract Task<(bool eof, FrequencyParametersPair matrix)> ReadNextMatrixAsync();
-
-            public static TouchstoneReaderCore Create(TouchstoneReader tsReader)
-            {
-                TouchstoneReaderCore readerCore = null;
-                string firstLine = default;
-
-                if (tsReader.MoveToNextValidLine())
-                {
-                    firstLine = tsReader.ReadLineAndCount();
-                }
-                else tsReader.ThrowHelper("Header", "No valid information contained in file.");
-
-                firstLine = firstLine.Trim();
-                if (firstLine[0] == Constants.OptionChar)
-                {
-                    readerCore = new TouchstoneReaderCoreV1(tsReader);
-                }
-                else if (firstLine[0] == Constants.KeywordOpenChar)
-                {
-                    readerCore = new TouchstoneReaderCoreV2(tsReader);
-                }
-                else
-                {
-                    tsReader.ThrowHelper("Header", "The Option Line (Touchstone format 1.0) or Version Keyword (Touchstone format 2.0) must be the first" +
-                        "non-comment and non-blank line in the file.");
-                }
-                readerCore.ReadHeader(firstLine);
-                return readerCore;
+                yield return pair;
             }
         }
-        class TouchstoneReaderCoreV1 : TouchstoneReaderCore
+        /// <summary>
+        /// Enumerates the frequency-dependent network parameter data from the specified <see cref="TextReader"/>.
+        /// </summary>
+        /// <param name="reader">The <see cref="TextReader"/> to read network data from.</param>
+        /// <returns>All the network data loaded from the reader.</returns>
+        /// <remarks>Unlike <see cref="ReadAllData(TextReader)"/>, this method returns an enumerable sequence of <see cref="FrequencyParametersPair"/> objects which are 
+        /// loaded into memory one at a time. This is useful when using LINQ queries (such as limiting the number of frequencies to load) or passing the sequence
+        /// to a collection to initialize. This avoids creating the whole collection in memory.</remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="reader"/> is null.</exception>
+        /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="reader"/>.</exception>
+        public static IEnumerable<FrequencyParametersPair> ReadData(TextReader reader)
         {
-            internal TouchstoneReaderCoreV1(TouchstoneReader reader) : base(reader) { }
-            int? flattenedMatrixLength;
-            readonly Queue<string> previewedLines = new Queue<string>();
-
-            protected override void ReadHeader(string currentLine)
+            using TouchstoneReader tsReader = TouchstoneReader.Create(reader);
+            while (tsReader.Read() is FrequencyParametersPair pair)
             {
-                tsReader.ParseOption(currentLine);
+                yield return pair;
             }
-            public override FrequencyParametersPair? ReadNextMatrix()
-            {
-                List<string> rawFlattenedMatrix = new List<string>();
-                FrequencyParametersPair? networkData = default;
-
-                if (!flattenedMatrixLength.HasValue)
-                {
-                    if (!tsReader.MoveToNextValidLine())
-                    {
-                        tsReader.ThrowHelper("Data");
-                    }
-                    string firstLine = tsReader.ReadLineAndCount();
-                    rawFlattenedMatrix.AddRange(TrimAndSplitLine(firstLine));
-
-                    // We only need to perform this check if the network has 2 ports or more; a one port network only has a single
-                    // data pair (i.e. two entries) plus frequency. We know that we don't need to investigate subsequent lines.
-                    if (rawFlattenedMatrix.Count > 3)
-                    {
-                        while (tsReader.MoveToNextValidLine())
-                        {
-                            string line = tsReader.ReadLineAndCount();
-                            var data = TrimAndSplitLine(line);
-                            // Continued data lines split over multiple should always have an even number (pairs of complex data).
-                            // New frequency points will have an odd number of values due to the frequency being present
-                            if (data.Count % 2 == 0)
-                            {
-                                rawFlattenedMatrix.AddRange(data);
-                            }
-                            else
-                            {
-                                previewedLines.Enqueue(line);
-                                break;
-                            }
-                        }
-                    }
-                    flattenedMatrixLength = rawFlattenedMatrix.Count;
-                }
-                else
-                {
-                    while (previewedLines.Count > 0 && rawFlattenedMatrix.Count < flattenedMatrixLength.Value)
-                    {
-                        string line = previewedLines.Dequeue();
-                        rawFlattenedMatrix.AddRange(TrimAndSplitLine(line));
-                    }
-                    while (rawFlattenedMatrix.Count < flattenedMatrixLength.Value && tsReader.MoveToNextValidLine())
-                    {
-                        string line = tsReader.ReadLineAndCount();
-                        rawFlattenedMatrix.AddRange(TrimAndSplitLine(line));
-                    }
-                }
-
-                if (rawFlattenedMatrix.Count == flattenedMatrixLength.Value)
-                {
-                    var (frequency, parameters) = tsReader.ParseRawData(rawFlattenedMatrix);
-
-                    NetworkParametersMatrix matrix = tsReader.Options.Parameter switch
-                    {
-                        ParameterType.Scattering => new ScatteringParametersMatrix(parameters, ListFormat.SourcePortMajor),
-                        _ => throw new NotImplementedException($"Support for parameter type {tsReader.Options.Parameter} has not been implemented."),
-                    };
-
-                    networkData = new FrequencyParametersPair(frequency, matrix);
-                }
-
-                return networkData;
-            }
-
-            /*protected override Task<FrequencyParametersPair> ReadNextMatrixAsync()
-            {
-                throw new NotImplementedException();
-            }*/
         }
-        class TouchstoneReaderCoreV2 : TouchstoneReaderCore
+        /// <summary>
+        /// Reads all frequency-dependent network parameter data from the specified file.
+        /// </summary>
+        /// <param name="filePath">The Touchstone file to read data from.</param>
+        /// <returns>All the network data loaded from the file.</returns>
+        /// <remarks>Unlike <see cref="ReadData(string)"/>, this method returns a <see cref="INetworkParametersCollection"/> with all of the
+        /// network data loaded into memory.</remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="filePath"/> is null.</exception>
+        /// <exception cref="FileNotFoundException"><paramref name="filePath"/> is not found.</exception>
+        /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="filePath"/>.</exception>
+        public static INetworkParametersCollection ReadAllData(string filePath)
         {
-            internal TouchstoneReaderCoreV2(TouchstoneReader reader) : base(reader) { }
-
-            protected override void ReadHeader(string currentLine)
+            using TouchstoneReader tsReader = TouchstoneReader.Create(filePath);
+            return tsReader.ReadToEnd();
+        }
+        /// <summary>
+        /// Reads all frequency-dependent network parameter data from the specified file. A <see cref="InvalidCastException"/> will be
+        /// thrown if the Touchstone options line indicates a different type of data in the file than the requested type.
+        /// </summary>
+        /// <param name="filePath">The Touchstone file to read data from.</param>
+        /// <returns>All the network data loaded from the file.</returns>
+        /// <remarks>Unlike <see cref="ReadData(string)"/>, this method returns a <see cref="NetworkParametersCollection{TMatrix}"/> with all of the
+        /// network data loaded into memory.</remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="filePath"/> is null.</exception>
+        /// <exception cref="FileNotFoundException"><paramref name="filePath"/> is not found.</exception>
+        /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="filePath"/>.</exception>
+        public static NetworkParametersCollection<T> ReadAllData<T>(string filePath) where T : NetworkParametersMatrix
+        {
+            using TouchstoneReader tsReader = TouchstoneReader.Create(filePath);
+            Type fileParamType = tsReader.Options.Parameter.ToNetworkParameterMatrixType();
+            if (fileParamType != typeof(T))
             {
-                throw new NotImplementedException();
+                throw new InvalidCastException($"The specified Touchstone file contains parameter data of type {fileParamType.Name} which does not match the expected type " +
+                    $"{typeof(T).Name}");
             }
-
-            public override FrequencyParametersPair? ReadNextMatrix()
+            else
             {
-                /*if (selected)
-                {
-                    ListFormat format = ListFormat.SourcePortMajor;
-                    if (Keywords.Version == FileVersion.Two && Keywords.NumberOfPorts == 2 && Keywords.TwoPortDataOrder.HasValue)
-                    {
-                        if (Keywords.TwoPortDataOrder.Value == TwoPortDataOrderConfig.TwoOne_OneTwo)
-                            format = ListFormat.DestinationPortMajor;
-                    }
-
-                    cancelToken.ThrowIfCancellationRequested();
-
-                    ScatteringParametersMatrix matrix = new ScatteringParametersMatrix(parameters, format);
-                    pair = new FrequencyParametersPair(frequency, matrix);
-                }*/
-
-                throw new NotImplementedException();
+                return (NetworkParametersCollection<T>)tsReader.ReadToEnd();
             }
-
-            /*protected override Task<FrequencyParametersPair> ReadNextMatrixAsync()
+        }
+        /// <summary>
+        /// Reads all frequency-dependent network parameter data from the specified <see cref="TextReader"/>.
+        /// </summary>
+        /// <param name="reader">The <see cref="TextReader"/> to read network data from.</param>
+        /// <remarks>Unlike <see cref="ReadData(TextReader)"/>, this method returns a <see cref="INetworkParametersCollection"/> with all of the
+        /// network data loaded into memory.</remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="reader"/> is null.</exception>
+        /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="reader"/>.</exception>
+        public static INetworkParametersCollection ReadAllData(TextReader reader)
+        {
+            using TouchstoneReader tsReader = TouchstoneReader.Create(reader);
+            return tsReader.ReadToEnd();
+        }
+        /// <summary>
+        /// Reads all frequency-dependent network parameter data of type <typeparamref name="T"/> from the specified <see cref="TextReader"/>. A <see cref="InvalidCastException"/> will be
+        /// thrown if the Touchstone options line indicates a different type of data in the file than the requested type.
+        /// </summary>
+        /// <param name="reader">The <see cref="TextReader"/> to read network data from.</param>
+        /// <remarks>Unlike <see cref="ReadData(TextReader)"/>, this method returns a <see cref="NetworkParametersCollection{TMatrix}"/> with all of the
+        /// network data loaded into memory.</remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="reader"/> is null.</exception>
+        /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="reader"/>.</exception>
+        /// <exception cref="InvalidCastException">Data in file is not <typeparamref name="T"/></exception>
+        public static NetworkParametersCollection<T> ReadAllData<T>(TextReader reader) where T : NetworkParametersMatrix
+        {
+            using TouchstoneReader tsReader = TouchstoneReader.Create(reader);
+            Type fileParamType = tsReader.Options.Parameter.ToNetworkParameterMatrixType();
+            if (fileParamType != typeof(T))
             {
-                throw new NotImplementedException();
-            }*/
+                throw new InvalidCastException($"The specified Touchstone file contains parameter data of type {fileParamType.Name} which does not match the expected type " +
+                    $"{typeof(T).Name}");
+            }
+            else
+            {
+                return (NetworkParametersCollection<T>)tsReader.ReadToEnd();
+            }
         }
         #endregion
-
         #region Utilities
         private static string GetTouchstoneFieldName<T>(string objectFieldName)
         {

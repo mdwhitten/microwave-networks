@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MicrowaveNetworks.Touchstone.Internal;
 using static MicrowaveNetworks.Internal.Utilities;
-using static MicrowaveNetworks.Touchstone.IO.Constants;
+using static MicrowaveNetworks.Touchstone.Internal.Constants;
 
 namespace MicrowaveNetworks.Touchstone.IO
 {
@@ -24,7 +24,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         private TextWriter Writer { get; set; }
 
         readonly TouchstoneWriterSettings settings;
-        readonly TouchstoneOptions options;
+        readonly TouchstoneOptionsLine options;
         bool headerWritten;
         bool columnsWritten;
         TouchstoneWriterCore core;
@@ -36,7 +36,7 @@ namespace MicrowaveNetworks.Touchstone.IO
             this.settings = settings ?? new TouchstoneWriterSettings();
             Writer = writer ?? throw new ArgumentNullException(nameof(writer));
 
-            options = new TouchstoneOptions
+            options = new TouchstoneOptionsLine
             {
                 Format = settings.DataFormat,
                 FrequencyUnit = settings.FrequencyUnit,
@@ -112,7 +112,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         }
         #endregion
         #region Internal Formatting Functions
-        private static string FormatOptions(TouchstoneOptions options)
+        private static string FormatOptions(TouchstoneOptionsLine options)
         {
             StringBuilder sb = new StringBuilder();
             sb.Append(OptionChar);

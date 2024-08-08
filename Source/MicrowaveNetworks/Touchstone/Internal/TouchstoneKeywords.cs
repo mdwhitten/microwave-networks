@@ -2,10 +2,40 @@
 
 namespace MicrowaveNetworks.Touchstone.Internal
 {
+    public enum TouchstoneKeywords
+    {
+        [TouchstoneParameter("Version")]
+        Version,
+        [TouchstoneParameter("Number of Ports")]
+        NumberOfPorts,
+        [TouchstoneParameter("Two-Port Order")]
+        TwoPortOrder,
+        [TouchstoneParameter("Number Of Frequencies")]
+        NumberOfFrequencies,
+        [TouchstoneParameter("Number of Noise Frequencies")]
+        NumberOfNoiseFrequencies,
+        [TouchstoneParameter("Reference")]
+        Reference,
+        [TouchstoneParameter("Matrix Format")]
+        MatrixFormat,
+        [TouchstoneParameter("Mixed-Mode Order")]
+        MixedModeOrder,
+        [TouchstoneParameter("Begin Information")]
+        BeginInformation,
+        [TouchstoneParameter("End Information")]
+        EndInformation,
+        [TouchstoneParameter("Network Data")]
+        NetworkData,
+        [TouchstoneParameter("Noise Data")]
+        NoiseData,
+        [TouchstoneParameter("End")]
+        End
+    }
+
     /// <summary>Represents valid keywords defined in the Touchstone version 2.0 specifiation.</summary>
     /// <remarks>These keywords will not be present in a 1.0 version file, and some keywords are optional. Hence, most fields are nullable to
     /// indicate whether they are present in the file or should be included in the rendered file.</remarks>
-    public class TouchstoneKeywords
+    internal class TouchstoneKeywordsSomethingEle
     {
         /// <summary>Provides information on the Version of the specification under which the file contents should be interpreted.</summary>
         /// <remarks>This property will alwyas be set when a file is read for both 1.0 and 2.0 files so that the file version is clearly known. When a <see cref="Touchstone"/> 
@@ -37,5 +67,10 @@ namespace MicrowaveNetworks.Touchstone.Internal
         /// <summary>Specifies whether an entire matrix or a subset of all matrix elements is given for single-ended data.</summary>
         [TouchstoneKeyword("Matrix Format")]
         public MatrixFormat? MatrixFormat;
+
+        [TouchstoneParameter("Mixed-Mode Order")]
+        public string MixedModeOrder;
+
+        public string Information;
     }
 }
