@@ -5,7 +5,7 @@
     /// </summary>
     /// <remarks>This object will be created when a Touchstone file is parsed, and the values of the fields will be used to create the option line when 
     /// a file is exported. See the specification at https://ibis.org/touchstone_ver2.0/touchstone_ver2_0.pdf for more information.</remarks>
-    internal class TouchstoneOptions
+    internal class TouchstoneOptionsLine
     {
         /// <summary>Specifies the unit of frequency in the file.</summary>
         public TouchstoneFrequencyUnit FrequencyUnit = TouchstoneFrequencyUnit.GHz;
@@ -29,8 +29,8 @@
         public float Reactance = 0;
 
         /// <summary>
-        /// Returns a new <see cref="TouchstoneOptions"/> with default values according to the specification.
+        /// Returns a new <see cref="TouchstoneOptionsLine"/> with default values according to the specification.
         /// </summary>
-        public static TouchstoneOptions Default = new TouchstoneOptions();
+        public static TouchstoneOptionsLine Default = new TouchstoneOptionsLine();
     }
 }
