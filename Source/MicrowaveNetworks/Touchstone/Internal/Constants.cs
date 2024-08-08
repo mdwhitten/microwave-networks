@@ -1,4 +1,4 @@
-﻿namespace MicrowaveNetworks.Touchstone.IO
+﻿namespace MicrowaveNetworks.Touchstone.Internal
 {
     internal static class Constants
     {
