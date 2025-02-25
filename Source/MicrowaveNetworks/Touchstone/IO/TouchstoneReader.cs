@@ -8,7 +8,8 @@ using System.Reflection;
 using MicrowaveNetworks.Matrices;
 using MicrowaveNetworks.Touchstone.Internal;
 using MicrowaveNetworks.Internal;
-using static System.Net.Mime.MediaTypeNames;
+
+#nullable enable
 
 namespace MicrowaveNetworks.Touchstone.IO
 {
@@ -24,15 +25,25 @@ namespace MicrowaveNetworks.Touchstone.IO
         /// If the <see cref="TouchstoneParameterAttribute"/> "R" is complex it will be represented by its real part. 
         /// </summary>
         public float Resistance { get; private set; }
-        public float Reactance { get; private set; }
+        public float? Reactance { get; private set; }
 
 
-        public TouchstoneFileVersion FileVersion { get; private set; }
+        /// <summary>Provides a per-port definition of the reference environment used for the S-parameter measurements in the network data.</summary>
+        [TouchstoneKeyword("Reference")]
+        public List<float>? Reference { get; private set; }
+
+        /// <summary>
+        /// Gets the noise parameter data associated with the Touchstone file.
+        /// </summary>
+        [TouchstoneKeyword("NoiseData")]
+        public Dictionary<double, TouchstoneNoiseData>? NoiseData { get; private set; }
+
+        /// <summary>Contains additional metadata saved in the [Begin/End Information] section of the Touchstone file.</summary>
+        public string? AdditionalInformation { get; private set; }
 
 
         /// <summary>Gets the <see cref="TouchstoneOptionsLine"/> parameters parsed from the options line in the Touchstone file.</summary>
-        private TouchstoneOptionsLine Options { get; }
-        private TouchstoneKeywords Keywords { get; } = new TouchstoneKeywords();
+        internal TouchstoneOptionsLine Options { get; }
 
 
         private static readonly FieldNameLookup<TouchstoneKeywords> keywordLookup = new FieldNameLookup<TouchstoneKeywords>();

@@ -9,11 +9,10 @@ using System.Text;
 using MicrowaveNetworks.Matrices;
 using MicrowaveNetworks.Touchstone.Internal;
 
+#nullable enable
+
 namespace MicrowaveNetworks.Touchstone
 {
-
-
-
     /// <summary>
     /// Defines a complete Touchstone file according to the version 2.0 specification including the frequency dependent network data as well as the file options and keywords.
     /// </summary>
@@ -33,27 +32,47 @@ namespace MicrowaveNetworks.Touchstone
         [TouchstoneParameter("R")]
         public float Resistance { get; set; } = 50;
 
+
         /// <summary>Provides a per-port definition of the reference environment used for the S-parameter measurements in the network data.</summary>
         [TouchstoneKeyword("Reference")]
-        public List<float> Reference { get; set; }
+        public List<float>? Reference { get; }
 
         /// <summary>
         /// Gets the noise parameter data associated with the Touchstone file.
         /// </summary>
         [TouchstoneKeyword("NoiseData")]
-        public Dictionary<double, TouchstoneNoiseData> NoiseData { get; set; }
+        public Dictionary<double, TouchstoneNoiseData>? NoiseData { get; }
 
         /// <summary>Contains additional metadata saved in the [Begin/End Information] section of the Touchstone file.</summary>
-        public Dictionary<string, string> AdditionalInformation { get; set; }
+        public string? AdditionalInformation { get; set; }
 
-        public Touchstone(INetworkParametersCollection networkParameters)
+        public Touchstone(string filePath)
         {
-            NetworkParameters = networkParameters;
+            using TouchstoneReader tsReader = TouchstoneReader.Create(filePath);
+
+            NetworkParameters = tsReader.ReadToEnd();
+            Resistance = tsReader.Resistance;
+            if (tsReader.Reference != null) Reference = new List<float>(tsReader.Reference);
+            if (tsReader.NoiseData != null) NoiseData = tsReader.NoiseData;
+            AdditionalInformation = tsReader.AdditionalInformation;
         }
-        public Touchstone(INetworkParametersCollection networkParameters, float resistance)
+
+        public Touchstone(INetworkParametersCollection networkParameters, float resistance = 50)
         {
             NetworkParameters = networkParameters;
             Resistance = resistance;
+        }
+
+
+        public Touchstone(INetworkParametersCollection networkParameters, float resistance, List<float>? reference = null, Dictionary<double, TouchstoneNoiseData>? noiseData = null,
+                         string? additionalInformation = null)
+        {
+            NetworkParameters = networkParameters;
+            Resistance = resistance;
+
+            Reference = reference;
+            NoiseData = noiseData;
+            AdditionalInformation = additionalInformation;
         }
 
 
@@ -136,6 +155,44 @@ namespace MicrowaveNetworks.Touchstone
             return sb.ToString();
         }
 
+        #region Static Functions
+        /// <summary>
+        /// Enumerates the frequency-dependent network parameter data from the specified file.
+        /// </summary>
+        /// <param name="filePath">The Touchstone file to load.</param>
+        /// <returns>All the network data loaded from the file.</returns>
+        /// <remarks>Unlike <see cref="ReadAllData(string)"/>, this method returns an enumerable sequence of <see cref="FrequencyParametersPair"/> objects which are 
+        /// loaded into memory one at a time. This is useful when using LINQ queries (such as limiting the number of frequencies to load) or passing the sequence
+        /// to a collection to initialize. This avoids creating the whole collection in memory.</remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="filePath"/> is null.</exception>
+        /// <exception cref="FileNotFoundException"><paramref name="filePath"/> is not found.</exception>
+        /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="filePath"/>.</exception>
+        public static IEnumerable<FrequencyParametersPair> ReadData(string filePath)
+        {
+            using TouchstoneReader tsReader = TouchstoneReader.Create(filePath);
+            while (tsReader.Read() is FrequencyParametersPair pair)
+            {
+                yield return pair;
+            }
+        }
+        /// <summary>
+        /// Enumerates the frequency-dependent network parameter data from the specified <see cref="TextReader"/>.
+        /// </summary>
+        /// <param name="reader">The <see cref="TextReader"/> to read network data from.</param>
+        /// <returns>All the network data loaded from the reader.</returns>
+        /// <remarks>Unlike <see cref="ReadAllData(TextReader)"/>, this method returns an enumerable sequence of <see cref="FrequencyParametersPair"/> objects which are 
+        /// loaded into memory one at a time. This is useful when using LINQ queries (such as limiting the number of frequencies to load) or passing the sequence
+        /// to a collection to initialize. This avoids creating the whole collection in memory.</remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="reader"/> is null.</exception>
+        /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="reader"/>.</exception>
+        public static IEnumerable<FrequencyParametersPair> ReadData(TextReader reader)
+        {
+            using TouchstoneReader tsReader = TouchstoneReader.Create(reader);
+            while (tsReader.Read() is FrequencyParametersPair pair)
+            {
+                yield return pair;
+            }
+        }
 
         /// <summary>
         /// Reads all frequency-dependent network parameter data from the specified file.
@@ -147,17 +204,76 @@ namespace MicrowaveNetworks.Touchstone
         /// <exception cref="ArgumentNullException"><paramref name="filePath"/> is null.</exception>
         /// <exception cref="FileNotFoundException"><paramref name="filePath"/> is not found.</exception>
         /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="filePath"/>.</exception>
-        public static Touchstone Load(string filePath)
+        public static INetworkParametersCollection ReadAllData(string filePath)
         {
             using TouchstoneReader tsReader = TouchstoneReader.Create(filePath);
-
-            var parameters = tsReader.ReadToEnd();
-
-            return new Touchstone(parameters, tsReader.Resistance);
-           
+            return tsReader.ReadToEnd();
         }
 
+        /// <summary>
+        /// Reads all frequency-dependent network parameter data from the specified file. A <see cref="InvalidCastException"/> will be
+        /// thrown if the Touchstone options line indicates a different type of data in the file than the requested type.
+        /// </summary>
+        /// <param name="filePath">The Touchstone file to read data from.</param>
+        /// <returns>All the network data loaded from the file.</returns>
+        /// <remarks>Unlike <see cref="ReadData(string)"/>, this method returns a <see cref="NetworkParametersCollection{TMatrix}"/> with all of the
+        /// network data loaded into memory.</remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="filePath"/> is null.</exception>
+        /// <exception cref="FileNotFoundException"><paramref name="filePath"/> is not found.</exception>
+        /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="filePath"/>.</exception>
+        public static NetworkParametersCollection<T> ReadAllData<T>(string filePath) where T : NetworkParametersMatrix
+        {
+            using TouchstoneReader tsReader = TouchstoneReader.Create(filePath);
+            Type fileParamType = tsReader.Options.Parameter.ToNetworkParameterMatrixType();
+            if (fileParamType != typeof(T))
+            {
+                throw new InvalidCastException($"The specified Touchstone file contains parameter data of type {fileParamType.Name} which does not match the expected type " +
+                    $"{typeof(T).Name}");
+            }
+            else
+            {
+                return (NetworkParametersCollection<T>)tsReader.ReadToEnd();
+            }
+        }
 
-        
+        /// <summary>
+        /// Reads all frequency-dependent network parameter data from the specified <see cref="TextReader"/>.
+        /// </summary>
+        /// <param name="reader">The <see cref="TextReader"/> to read network data from.</param>
+        /// <remarks>Unlike <see cref="ReadData(TextReader)"/>, this method returns a <see cref="INetworkParametersCollection"/> with all of the
+        /// network data loaded into memory.</remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="reader"/> is null.</exception>
+        /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="reader"/>.</exception>
+        public static INetworkParametersCollection ReadAllData(TextReader reader)
+        {
+            using TouchstoneReader tsReader = TouchstoneReader.Create(reader);
+            return tsReader.ReadToEnd();
+        }
+
+        /// <summary>
+        /// Reads all frequency-dependent network parameter data of type <typeparamref name="T"/> from the specified <see cref="TextReader"/>. A <see cref="InvalidCastException"/> will be
+        /// thrown if the Touchstone options line indicates a different type of data in the file than the requested type.
+        /// </summary>
+        /// <param name="reader">The <see cref="TextReader"/> to read network data from.</param>
+        /// <remarks>Unlike <see cref="ReadData(TextReader)"/>, this method returns a <see cref="NetworkParametersCollection{TMatrix}"/> with all of the
+        /// network data loaded into memory.</remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="reader"/> is null.</exception>
+        /// <exception cref="InvalidDataException">Invalid data or format in <paramref name="reader"/>.</exception>
+        /// <exception cref="InvalidCastException">Data in file is not <typeparamref name="T"/></exception>
+        public static NetworkParametersCollection<T> ReadAllData<T>(TextReader reader) where T : NetworkParametersMatrix
+        {
+            using TouchstoneReader tsReader = TouchstoneReader.Create(reader);
+            Type fileParamType = tsReader.Options.Parameter.ToNetworkParameterMatrixType();
+            if (fileParamType != typeof(T))
+            {
+                throw new InvalidCastException($"The specified Touchstone file contains parameter data of type {fileParamType.Name} which does not match the expected type " +
+                    $"{typeof(T).Name}");
+            }
+            else
+            {
+                return (NetworkParametersCollection<T>)tsReader.ReadToEnd();
+            }
+        }
+        #endregion
     }
 }
