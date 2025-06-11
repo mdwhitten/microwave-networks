@@ -8,6 +8,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{EA029C63-8AB9-40C1-A79B-50D263A366CE}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		..\Specification\touchstone_ver2_0.pdf = ..\Specification\touchstone_ver2_0.pdf
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MicrowaveNetworksTests", "MicrowaveNetworksTests\MicrowaveNetworksTests.csproj", "{C109571C-CEFD-4D97-A2EF-9EF680261272}"

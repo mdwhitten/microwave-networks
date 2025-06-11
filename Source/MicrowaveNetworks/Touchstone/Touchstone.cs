@@ -14,7 +14,7 @@ using MicrowaveNetworks.Touchstone.Internal;
 namespace MicrowaveNetworks.Touchstone
 {
     /// <summary>
-    /// Defines a complete Touchstone file according to the version 2.0 specification including the frequency dependent network data as well as the file options and keywords.
+    /// Defines a complete Touchstone file according to the version 2.0 specification including the frequency dependent network data.
     /// </summary>
     /// <remarks>Use this class when writing to a Touchstone file for complete control of the final output, or when making in-memory modifications/round-trip edits to an existing file.
     /// If only the network data is needed from the file, you can use the <see cref="ReadAllData(string)"/> function to quickly access the data. Alternatively, you
@@ -91,15 +91,9 @@ namespace MicrowaveNetworks.Touchstone
         {
             if (filePath == null) throw new ArgumentNullException(nameof(filePath));
 
-            using (TouchstoneWriter writer = TouchstoneWriter.Create(filePath, settings))
+            using (TouchstoneWriter writer = TouchstoneWriter.Create(filePath, this, settings))
             {
-                writer.Options = Options;
-                writer.Keywords = Keywords;
-
-                foreach (var pair in NetworkParameters)
-                {
-                    writer.WriteData(pair);
-                }
+                writer.WriteNetworkData();
                 writer.Flush();
             };
         }
@@ -120,19 +114,11 @@ namespace MicrowaveNetworks.Touchstone
         {
             if (filePath == null) throw new ArgumentNullException(nameof(filePath));
 
-            using (TouchstoneWriter writer = TouchstoneWriter.Create(filePath, settings))
+            using (TouchstoneWriter writer = TouchstoneWriter.Create(filePath, this, settings))
             {
-                writer.Options = Options;
-                writer.Keywords = Keywords;
-                writer.CancelToken = token;
-
-                foreach (var pair in NetworkParameters)
-                {
-                    token.ThrowIfCancellationRequested();
-                    await writer.WriteDataAsync(pair);
-                }
-
-                writer.Flush();
+                //writer.CancelToken = token;
+                await writer.WriteNetworkDataAsync(token);
+                await writer.FlushAsync();
             };
         }
 
@@ -144,14 +130,8 @@ namespace MicrowaveNetworks.Touchstone
         {
             StringBuilder sb = new StringBuilder();
 
-            using TouchstoneWriter writer = TouchstoneWriter.Create(sb);
-            writer.Options = Options;
-            writer.Keywords = Keywords;
-
-            foreach (var data in NetworkParameters)
-            {
-                writer.WriteData(data);
-            }
+            using TouchstoneWriter writer = TouchstoneWriter.Create(sb, this, new TouchstoneWriterSettings());
+            writer.WriteNetworkData();
             return sb.ToString();
         }
 

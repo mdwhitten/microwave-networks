@@ -12,14 +12,4 @@
             => KeywordOpenChar + keywordText + KeywordCloseChar;
     }
 
-    internal static class ControlKeywords
-    {
-        public static readonly string BeginInfo = "Begin Information".FormatKeyword();
-        public static readonly string EndInfo = "End Information".FormatKeyword();
-        public static readonly string NetworkData = "Network Data".FormatKeyword();
-        public static readonly string NoiseData = "Noise Data".FormatKeyword();
-        public static readonly string End = "End".FormatKeyword();
-
-        //public static readonly TouchstoneKeyword BeginInfo;
-    }
 }

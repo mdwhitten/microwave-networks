@@ -26,7 +26,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         /// <summary>Signifies the column ordering convention for two-port network data when <see cref="Version"/>
         /// is <see cref="TouchstoneFileVersion.Two"/>.</summary>
         [TouchstoneKeyword("Two-Port Data Order")]
-        public TwoPortDataOrderConfig? TwoPortDataOrder { get; set; };
+        public TwoPortDataOrderConfig? TwoPortDataOrder { get; set; } = TwoPortDataOrderConfig.TwoOne_OneTwo;
 
         /// <summary>
         /// Specifies whether a comment line should be added above the network data indicating the parameter type, index, and unit.
@@ -36,7 +36,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         /// <summary>
         /// Specifies the numeric format string that should be used for converting the double values to string when writing.
         /// </summary>
-        public string NumericFormatString { get; set; };
+        public string NumericFormatString { get; set; }
 
         /// <summary>
         /// Specifies the column width for the Touchstone file when <see cref="UnifiedColumnWidth"/> is true.
@@ -53,7 +53,5 @@ namespace MicrowaveNetworks.Touchstone.IO
         /// Specifies the numeric format provider to use when writing the Touchstone data.
         /// </summary>
         public IFormatProvider NumericFormatProvider { get; set; } = CultureInfo.CurrentCulture.NumberFormat;
-
-        public static TouchstoneWriterSettings Default => new TouchstoneWriterSettings();
     }
 }
