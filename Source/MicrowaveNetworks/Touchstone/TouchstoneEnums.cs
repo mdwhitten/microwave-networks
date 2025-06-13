@@ -101,7 +101,7 @@ namespace MicrowaveNetworks.Touchstone
     /// <summary>
     /// Represents valid values for the <c>[Matrix Format]</c> keyword, which is used to define whether an entire matrix or a subset of all matrix 
     /// elements is given for single-ended data.</summary>
-    public enum MatrixFormat
+    public enum TouchstoneMatrixFormat
     {
         /// <summary>Indicates that the network data matrix contains all values.</summary>
         Full,

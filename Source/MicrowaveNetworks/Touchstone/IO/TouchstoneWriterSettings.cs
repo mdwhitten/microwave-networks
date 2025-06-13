@@ -25,8 +25,12 @@ namespace MicrowaveNetworks.Touchstone.IO
 
         /// <summary>Signifies the column ordering convention for two-port network data when <see cref="Version"/>
         /// is <see cref="TouchstoneFileVersion.Two"/>.</summary>
-        [TouchstoneKeyword("Two-Port Data Order")]
         public TwoPortDataOrderConfig? TwoPortDataOrder { get; set; } = TwoPortDataOrderConfig.TwoOne_OneTwo;
+
+		/// <summary>
+		/// Specifies the value of the <c>[Matrix Format]</c> keyword, which is used to define whether an entire matrix or a subset of all matrix 
+		/// elements is given for single-ended data.</summary>
+		public TouchstoneMatrixFormat? MatrixFormat { get; set; } = TouchstoneMatrixFormat.Full;
 
         /// <summary>
         /// Specifies whether a comment line should be added above the network data indicating the parameter type, index, and unit.
@@ -48,6 +52,8 @@ namespace MicrowaveNetworks.Touchstone.IO
         /// text editor with constant width font. The column width is specified in <see cref="ColumnWidth"/>;
         /// </summary>
         public bool UnifiedColumnWidth { get; set; } = true;
+
+        public char ColumnSeparationChar { get; set; } = '\t';
 
         /// <summary>
         /// Specifies the numeric format provider to use when writing the Touchstone data.

@@ -48,10 +48,12 @@ namespace MicrowaveNetworks.Touchstone.IO
 					_ => throw new NotImplementedException(),
 				};
 			}
+			internal virtual bool ShouldSkip((int DestinationPort, int SourcePort) ports) => false;
 
 			public virtual void Dispose() { }
 #if NET5_0_OR_GREATER
 			public async virtual ValueTask DisposeAsync() { await ValueTask.CompletedTask; }
+
 #endif
 		}
 	}

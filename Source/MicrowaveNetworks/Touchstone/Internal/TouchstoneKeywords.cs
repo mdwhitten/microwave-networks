@@ -8,8 +8,8 @@ namespace MicrowaveNetworks.Touchstone.Internal
         Version,
         [TouchstoneParameter("Number of Ports")]
         NumberOfPorts,
-        [TouchstoneParameter("Two-Port Order")]
-        TwoPortOrder,
+        [TouchstoneParameter("Two-Port Data Order")]
+        TwoPortDataOrder,
         [TouchstoneParameter("Number Of Frequencies")]
         NumberOfFrequencies,
         [TouchstoneParameter("Number of Noise Frequencies")]

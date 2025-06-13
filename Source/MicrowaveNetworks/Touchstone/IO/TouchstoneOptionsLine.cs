@@ -1,11 +1,13 @@
-﻿namespace MicrowaveNetworks.Touchstone.Internal
+﻿using MicrowaveNetworks.Touchstone.Internal;
+
+namespace MicrowaveNetworks.Touchstone.IO
 {
     /// <summary>
     /// Represents the information contained in the option line of the Touchstone file based on the specification.
     /// </summary>
     /// <remarks>This object will be created when a Touchstone file is parsed, and the values of the fields will be used to create the option line when 
     /// a file is exported. See the specification at https://ibis.org/touchstone_ver2.0/touchstone_ver2_0.pdf for more information.</remarks>
-    internal class TouchstoneOptionsLine
+    public class TouchstoneOptionsLine
     {
         /// <summary>Specifies the unit of frequency in the file.</summary>
         public TouchstoneFrequencyUnit FrequencyUnit = TouchstoneFrequencyUnit.GHz;
@@ -26,11 +28,6 @@
         /// </summary>
         /// <remarks>This parameter is not specified by Touchstone standard while scikit-rf has an implementation for it.</remarks>
         [TouchstoneParameter("R")]
-        public float Reactance = 0;
-
-        /// <summary>
-        /// Returns a new <see cref="TouchstoneOptionsLine"/> with default values according to the specification.
-        /// </summary>
-        public static TouchstoneOptionsLine Default = new TouchstoneOptionsLine();
-    }
+        public float? Reactance = null;
+	}
 }

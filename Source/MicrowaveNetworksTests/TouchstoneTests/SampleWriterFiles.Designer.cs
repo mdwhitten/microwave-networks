@@ -22,14 +22,14 @@ namespace MicrowaveNetworksTests.TouchstoneTests {
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "17.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    internal class SampleFiles {
+    internal class SampleWriterFiles {
         
         private static global::System.Resources.ResourceManager resourceMan;
         
         private static global::System.Globalization.CultureInfo resourceCulture;
         
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
-        internal SampleFiles() {
+        internal SampleWriterFiles() {
         }
         
         /// <summary>
@@ -39,7 +39,7 @@ namespace MicrowaveNetworksTests.TouchstoneTests {
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("MicrowaveNetworksTests.TouchstoneTests.SampleFiles", typeof(SampleFiles).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("MicrowaveNetworksTests.TouchstoneTests.SampleWriterFiles", typeof(SampleWriterFiles).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
@@ -61,35 +61,90 @@ namespace MicrowaveNetworksTests.TouchstoneTests {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to ! 4-port S-parameter data, taken at three frequency points
-        ///! note that data points need not be aligned
+        ///   Looks up a localized string similar to [Version] 2.0
         ///# GHz S MA R 50
-        ///5.00000 0.60 161.24 0.40 -42.20 0.42 -66.58 0.53 -79.34 !row 1
-        ///        0.40 -42.20 0.60 161.20 0.53 -79.34 0.42 -66.58 !row 2
-        ///        0.42 -66.58 0.53 -79.34 0.60 161.24 0.40 -42.20 !row 3
-        ///        0.53 -79.34 0.42 -66.58 0.40 -42.20 0.60 161.24 !row 4
-        ///6.00000 0.57 150.37 0.40 -44.34 0.41 -81.24 0.57 -95.77 !row 1
-        ///        0.40 -44.34 0.57 150.37 0.57 -95.77 0.41 -81.24 !row 2
-        ///       [rest of string was truncated]&quot;;.
+        ///[Number of Ports] 4
+        ///[Number of Frequencies] 1
+        ///[Reference] 50 75 0.01 0.01
+        ///[Matrix Format] Full
+        ///[Network Data]
+        ///5.00000 0.60 161.24 0.40 -42.20 0.42 -66.58 0.53 -79.34
+        ///		0.40 -42.20 0.60 161.20 0.53 -79.34 0.42 -66.58
+        ///		0.42 -66.58 0.53 -79.34 0.60 161.24 0.40 -42.20
+        ///		0.53 -79.34 0.42 -66.58 0.40 -42.20 0.60 161.24.
         /// </summary>
-        internal static string FourPort_v1 {
+        internal static string FourPort_v2_FullMatrix {
             get {
-                return ResourceManager.GetString("FourPort_v1", resourceCulture);
+                return ResourceManager.GetString("FourPort_v2_FullMatrix", resourceCulture);
             }
         }
         
         /// <summary>
         ///   Looks up a localized string similar to # MHz S MA R 75
-        ///!freq magZ11 angZ11
         ///100 0.99 -4
-        ///200 0.80 -22
+        ///200 0.8 -22
         ///300 0.707 -45
-        ///400 0.40 -62
-        ///500 0.01 -89.
+        ///400 0.4 -62
+        ///500 0.01 -89
+        ///.
         /// </summary>
         internal static string OnePort_v1 {
             get {
                 return ResourceManager.GetString("OnePort_v1", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [Version] 2.0
+        ///# MHz S MA R 50
+        ///[Number of Ports] 1
+        ///[Number of Frequencies] 3
+        ///[Reference] 20
+        ///[Network Data]
+        ///1.0000 0.3926 -0.1211
+        ///2.0000 0.3517 -0.3054
+        ///3.0000 0.3419 0.3336
+        ///.
+        /// </summary>
+        internal static string OnePort_v2 {
+            get {
+                return ResourceManager.GetString("OnePort_v2", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [Version] 2.0
+        ///# GHz S MA R 50
+        ///[Number of Ports] 2
+        ///[Two-Port Data Order] 12_21
+        ///[Number of Frequencies] 2
+        ///[Reference] 50 25
+        ///[Network Data]
+        ///2 .95 -26 .04 76 3.57 157 .66 -14
+        ///22 .61 -144 .14 40 1.31 40 .56 -85
+        ///[End].
+        /// </summary>
+        internal static string TwoPort_v2_12_21 {
+            get {
+                return ResourceManager.GetString("TwoPort_v2_12_21", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to [Version] 2.0
+        ///# GHz S MA R 50
+        ///[Number of Ports] 2
+        ///[Two-Port Data Order] 21_12
+        ///[Number of Frequencies] 2
+        ///[Reference] 50 25
+        ///[Network Data]
+        ///2 .95 -26 3.57 157 .04 76 .66 -14
+        ///22 .61 -144 1.31 40 .14 40 .56 -85
+        ///.
+        /// </summary>
+        internal static string TwoPort_v2_21_12 {
+            get {
+                return ResourceManager.GetString("TwoPort_v2_21_12", resourceCulture);
             }
         }
     }

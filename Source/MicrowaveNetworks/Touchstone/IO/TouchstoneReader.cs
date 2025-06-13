@@ -24,8 +24,8 @@ namespace MicrowaveNetworks.Touchstone.IO
         /// Specifies the reference resistance in ohms, where <see cref="Resistance"/> is a real, positive number of ohms.
         /// If the <see cref="TouchstoneParameterAttribute"/> "R" is complex it will be represented by its real part. 
         /// </summary>
-        public float Resistance { get; private set; }
-        public float? Reactance { get; private set; }
+        public float Resistance => Options.Resistance;
+        public float? Reactance => Options.Reactance;
 
 
         /// <summary>Provides a per-port definition of the reference environment used for the S-parameter measurements in the network data.</summary>
@@ -43,7 +43,7 @@ namespace MicrowaveNetworks.Touchstone.IO
 
 
         /// <summary>Gets the <see cref="TouchstoneOptionsLine"/> parameters parsed from the options line in the Touchstone file.</summary>
-        internal TouchstoneOptionsLine Options { get; }
+        public TouchstoneOptionsLine Options { get; }
 
 
         private static readonly FieldNameLookup<TouchstoneKeywords> keywordLookup = new FieldNameLookup<TouchstoneKeywords>();
@@ -157,7 +157,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         #region Parsing
         private (TouchstoneKeywords Keyword, string Value) ParseKeyword(string line)
         {
-            var match = Regex.Match(line, @"[(\w+)]\s(\w+)?");
+            var match = Regex.Match(line, @"\[([\w\s-]+)\]\s?([\w\d\.\s]+)?");
 
             if (!match.Success) ThrowHelper("Keywords", "Bad keyword format");
 
@@ -207,7 +207,7 @@ namespace MicrowaveNetworks.Touchstone.IO
                     {
                         string value = enumer.Current;
 
-                        bool parsed = TryParseImpedance(value, out float r, out float x);
+                        bool parsed = TryParseImpedance(value, out float r, out float? x);
 
                         if (parsed)
                         {
@@ -284,10 +284,10 @@ namespace MicrowaveNetworks.Touchstone.IO
             string[] data = Regex.Split(line, @"\s+");
             return new List<string>(data);
         }
-        private bool TryParseImpedance(string impedance, out float r, out float x)
+        private bool TryParseImpedance(string impedance, out float r, out float? x)
         {
             r = 0;
-            x = 0;
+            x = null;
             bool parsed = float.TryParse(impedance, out r);
             if (!parsed)
             {
@@ -316,10 +316,11 @@ namespace MicrowaveNetworks.Touchstone.IO
                 switch (nextChar)
                 {
                     // If it's a space, advance forward by character until we hit a definitive value
+                    case '\t':
                     case ' ':
                         reader.Read();
                         break;
-                    // For new lines and comments, skip to the next line
+                    // For comments, skip to the next line
                     case Constants.CommentChar:
                         Comments.Add(reader.ReadLine());
                         lineNumber++;
@@ -511,7 +512,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         private void ThrowHelper(string sectionName, string extraMessage = null, Exception inner = null)
         {
             string message = $"Invalid data format parsing section {sectionName} at line {lineNumber}.";
-            if (!string.IsNullOrEmpty(extraMessage)) message += $" Parser returned message \"{extraMessage}\".";
+            if (!string.IsNullOrEmpty(extraMessage)) message += $" Parser returned message \"{extraMessage}\"";
             if (inner != null)
             {
                 throw new InvalidDataException(message);

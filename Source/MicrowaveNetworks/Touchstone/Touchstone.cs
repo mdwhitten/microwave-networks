@@ -31,10 +31,17 @@ namespace MicrowaveNetworks.Touchstone
         /// The default value is set to 50 ohms.</summary>
         [TouchstoneParameter("R")]
         public float Resistance { get; set; } = 50;
+		/// <summary>
+		/// Specifies the reference reactance in ohms, where <see cref="Reactance"/> is a real number of ohms. 
+		/// If the <see cref="TouchstoneParameterAttribute"/> "R" is complex it will be represented by its imaginary part.
+		/// Otherwise it is considered to be 0.
+		/// </summary>
+		/// <remarks>This parameter is not specified by Touchstone standard while scikit-rf has an implementation for it.</remarks>
+		[TouchstoneParameter("R")]
+		public float? Reactance { get; set; }
 
-
-        /// <summary>Provides a per-port definition of the reference environment used for the S-parameter measurements in the network data.</summary>
-        [TouchstoneKeyword("Reference")]
+		/// <summary>Provides a per-port definition of the reference environment used for the S-parameter measurements in the network data.</summary>
+		[TouchstoneKeyword("Reference")]
         public List<float>? Reference { get; }
 
         /// <summary>
@@ -52,9 +59,40 @@ namespace MicrowaveNetworks.Touchstone
 
             NetworkParameters = tsReader.ReadToEnd();
             Resistance = tsReader.Resistance;
+            Reactance = tsReader.Reactance;
             if (tsReader.Reference != null) Reference = new List<float>(tsReader.Reference);
             if (tsReader.NoiseData != null) NoiseData = tsReader.NoiseData;
             AdditionalInformation = tsReader.AdditionalInformation;
+        }
+		public Touchstone(TextReader reader)
+		{
+			using TouchstoneReader tsReader = TouchstoneReader.Create(reader);
+
+			NetworkParameters = tsReader.ReadToEnd();
+			Resistance = tsReader.Resistance;
+			Reactance = tsReader.Reactance;
+			if (tsReader.Reference != null) Reference = new List<float>(tsReader.Reference);
+			if (tsReader.NoiseData != null) NoiseData = tsReader.NoiseData;
+			AdditionalInformation = tsReader.AdditionalInformation;
+		}
+
+		/// <summary>
+		/// Initializes a new <see cref="Touchstone"/> object with the specified number of ports with an empty <see cref="NetworkParametersCollection{TMatrix}"/> of type <see cref="ScatteringParametersMatrix"/> and a 
+		/// resistance of 50 ohms.
+		/// </summary>
+		/// <param name="numberOfPorts"></param>
+		public Touchstone(int numberOfPorts)
+        {
+            NetworkParameters = new NetworkParametersCollection<ScatteringParametersMatrix>(numberOfPorts);
+
+            Resistance = 50.0f;
+        }
+
+        public static Touchstone Create<TMatrixType>(int numberOfPorts, float resistance = 50.0f) where TMatrixType : NetworkParametersMatrix
+        {
+            NetworkParametersCollection<TMatrixType> collection = new NetworkParametersCollection<TMatrixType>(numberOfPorts);
+
+            return new Touchstone(collection, resistance);
         }
 
         public Touchstone(INetworkParametersCollection networkParameters, float resistance = 50)
@@ -126,14 +164,17 @@ namespace MicrowaveNetworks.Touchstone
         /// Renders the object as a properly formatted Touchstone file based on the configured Touchstone options.
         /// </summary>
         /// <returns>A string representation of a Touchstone file.</returns>
-        public override string ToString()
+        public override string ToString() => ToString(new TouchstoneWriterSettings());
+        public string ToString(TouchstoneWriterSettings settings)
         {
-            StringBuilder sb = new StringBuilder();
+			StringBuilder sb = new StringBuilder();
 
-            using TouchstoneWriter writer = TouchstoneWriter.Create(sb, this, new TouchstoneWriterSettings());
-            writer.WriteNetworkData();
-            return sb.ToString();
-        }
+            using (TouchstoneWriter writer = TouchstoneWriter.Create(sb, this, settings))
+            {
+                writer.WriteNetworkData();
+            }
+			return sb.ToString();
+		}
 
         #region Static Functions
         /// <summary>

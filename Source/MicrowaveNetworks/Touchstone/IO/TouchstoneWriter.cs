@@ -13,10 +13,10 @@ using static MicrowaveNetworks.Touchstone.Internal.Constants;
 
 namespace MicrowaveNetworks.Touchstone.IO
 {
-	/// <summary>
-	/// Provides lower-level support for rendering Touchstone files from network data and Touchstone options and keywords.
-	/// </summary>
-	public sealed partial class TouchstoneWriter : IDisposable
+    /// <summary>
+    /// Provides lower-level support for rendering Touchstone files from network data and Touchstone options and keywords.
+    /// </summary>
+    public sealed partial class TouchstoneWriter : IDisposable
 #if NET5_0_OR_GREATER
 									, IAsyncDisposable
 #endif
@@ -35,6 +35,10 @@ namespace MicrowaveNetworks.Touchstone.IO
 		private TouchstoneWriter(TextWriter writer, Touchstone touchstone, TouchstoneWriterSettings settings)
 		{
 			this.settings = settings ?? new TouchstoneWriterSettings();
+			if (!char.IsWhiteSpace(settings.ColumnSeparationChar))
+			{
+				throw new ArgumentException("The column separation character must be a whitespace character.");
+			}
 			Writer = writer ?? throw new ArgumentNullException(nameof(writer));
 
 			options = new TouchstoneOptionsLine
@@ -42,7 +46,8 @@ namespace MicrowaveNetworks.Touchstone.IO
 				Format = settings.DataFormat,
 				FrequencyUnit = settings.FrequencyUnit,
 				Parameter = touchstone.NetworkParameters.GetTouchstoneParameterType(),
-				Resistance = touchstone.Resistance
+				Resistance = touchstone.Resistance,
+				Reactance = touchstone.Reactance
 			};
 			this.touchstone = touchstone;
 		}
@@ -131,10 +136,16 @@ namespace MicrowaveNetworks.Touchstone.IO
 			string frequencyUnit = TouchstoneEnumMap<TouchstoneFrequencyUnit>.ToTouchstoneValue(options.FrequencyUnit);
 			string parameter = TouchstoneEnumMap<ParameterType>.ToTouchstoneValue(options.Parameter);
 			string format = TouchstoneEnumMap<TouchstoneDataFormat>.ToTouchstoneValue(options.Format);
-			string sign = options.Reactance >= 0 ? "+" : ""; // in case of negative number the "-" is already part of the Reactance value
-			string resistance = options.Reactance == 0 ?
-				$"{ResistanceChar} {options.Resistance:g}" :
-				$"{ResistanceChar} ({options.Resistance:g}{sign}{options.Reactance:g}j)";
+			string resistance = "";
+			if (options.Reactance != null && options.Reactance > 0)
+			{
+				string sign = options.Reactance >= 0 ? "+" : ""; // in case of negative number the "-" is already part of the Reactance value
+				resistance = $"{ResistanceChar} ({options.Resistance:g}{sign}{options.Reactance:g}j)";
+			}
+			else
+			{
+				resistance = $"{ResistanceChar} {options.Resistance:g}";
+			}
 
 			return string.Join(" ", OptionChar, frequencyUnit, parameter, format, resistance);
 		}
@@ -237,8 +248,13 @@ namespace MicrowaveNetworks.Touchstone.IO
 			// Prepare frequency
 			double scaledFrequency = frequency / settings.FrequencyUnit.GetMultiplier();
 
-			foreach (var (_, parameter) in matrix.EnumerateParameters(format))
+			foreach (var (ports, parameter) in matrix.EnumerateParameters(format))
 			{
+				// Supports upper/lower matrix configuration for v2 files
+				if (core.ShouldSkip(ports))
+				{
+					continue;
+				}
 				switch (settings.DataFormat)
 				{
 					case TouchstoneDataFormat.DecibelAngle:
@@ -287,10 +303,10 @@ namespace MicrowaveNetworks.Touchstone.IO
 				}
 
 				enumer.MoveNext();
-				sb.Append('\t');
+				sb.Append(settings.ColumnSeparationChar);
 				sb.Append(enumer.Current);
 				enumer.MoveNext();
-				sb.Append('\t');
+				sb.Append(settings.ColumnSeparationChar);
 				sb.Append(enumer.Current);
 				currentColumn += 2;
 			});
@@ -334,6 +350,7 @@ namespace MicrowaveNetworks.Touchstone.IO
 		public void WriteNetworkData()
 		{
 			if (!headerWritten) WriteHeader();
+			core.BeginNetworkData();
 			if (settings.IncludeColumnNames && !columnsWritten)
 			{
 				string columns = FormatColumns(touchstone.NetworkParameters.NumberOfPorts);
@@ -348,6 +365,7 @@ namespace MicrowaveNetworks.Touchstone.IO
 		public async Task WriteNetworkDataAsync(CancellationToken token = default)
 		{
 			if (!headerWritten) await WriteHeaderAsync();
+			await core.BeginNetworkDataAsync();
 			if (settings.IncludeColumnNames && !columnsWritten)
 			{
 				string columns = FormatColumns(touchstone.NetworkParameters.NumberOfPorts);

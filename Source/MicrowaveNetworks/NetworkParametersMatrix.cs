@@ -194,9 +194,10 @@ namespace MicrowaveNetworks
         }
 
         #region Overrides and Interface Implementations
-        /// <summary>Returns an enumerator for the matrix with a default <see cref="ListFormat"/> of <see cref="ListFormat.SourcePortMajor"/>.</summary>
+        /// <summary>Returns an enumerator for the matrix with a default <see cref="ListFormat"/> of <see cref="ListFormat.SourcePortMajor"/> 
+        /// if the number of ports is 2; otherwise, <see cref="ListFormat.DestinationPortMajor"/> will be used.</summary>
         /// <returns>An enumerator for the matrix.</returns>
-        public IEnumerator<PortNetworkParameterPair> GetEnumerator() => GetEnumerator(ListFormat.SourcePortMajor);
+        public IEnumerator<PortNetworkParameterPair> GetEnumerator() => GetEnumerator(NumPorts == 2 ? ListFormat.SourcePortMajor : ListFormat.DestinationPortMajor);
         /// <summary>Returns an enumerator for the matrix with element ordering defined by <paramref name="format"/>.</summary>
         /// <returns>An enumerator for the matrix in the specified format.</returns>
         public IEnumerator<PortNetworkParameterPair> GetEnumerator(ListFormat format)
@@ -222,7 +223,10 @@ namespace MicrowaveNetworks
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
-            Utilities.ForEachParameter(NumPorts, ListFormat.DestinationPortMajor, index =>
+
+            ListFormat format = NumPorts == 2 ? ListFormat.SourcePortMajor : ListFormat.DestinationPortMajor;
+
+            Utilities.ForEachParameter(NumPorts, format, index =>
             {
                 (int dest, int source) = index;
 

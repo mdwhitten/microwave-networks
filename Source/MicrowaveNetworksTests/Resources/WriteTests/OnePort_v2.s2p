@@ -1,0 +1,10 @@
+﻿[Version] 2.0
+# MHz S MA R 50
+[Number of Ports] 1
+[Number of Frequencies] 3
+[Reference] 20
+[Network Data]
+1.0000 0.3926 -0.1211
+2.0000 0.3517 -0.3054
+3.0000 0.3419 0.3336
+[End]
