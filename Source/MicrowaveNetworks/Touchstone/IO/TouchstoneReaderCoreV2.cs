@@ -93,6 +93,7 @@ namespace MicrowaveNetworks.Touchstone.IO
 							case TouchstoneKeywords.NumberOfNoiseFrequencies:
 								NumberOfNoiseFrequencies = int.Parse(value);
 								tsReader.NoiseData = new Dictionary<double, TouchstoneNoiseData>();
+								throw new NotImplementedException("Support for noise data has not been implemented");
 								break;
 							case TouchstoneKeywords.Reference:
 								string references = ReadToNextKeyword(value);
@@ -103,6 +104,7 @@ namespace MicrowaveNetworks.Touchstone.IO
 								break;
 							case TouchstoneKeywords.MixedModeOrder:
 								MixedModeOrder = ReadToNextKeyword(value);
+								throw new NotImplementedException("Support for mixed mode parameters has not been implemented yet.");
 								break;
 							case TouchstoneKeywords.BeginInformation:
 								string information = ReadToNextKeyword(value);
@@ -112,7 +114,7 @@ namespace MicrowaveNetworks.Touchstone.IO
 								break;
 						}
 					}
-					catch (Exception ex)
+					catch (Exception ex) when (!(ex is NotImplementedException))
 					{
 						tsReader.ThrowHelper("Header", "Error parsing keywords", ex);
 					}

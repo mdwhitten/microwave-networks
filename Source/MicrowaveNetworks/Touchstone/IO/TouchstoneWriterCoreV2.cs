@@ -103,16 +103,6 @@ namespace MicrowaveNetworks.Touchstone.IO
 			{
 				WriteKeywordBasic(TouchstoneKeywords.End);
 			}
-#if NET5_0_OR_GREATER
-			public override async ValueTask DisposeAsync()
-			{
-				if (tsWriter.Writer != null)
-				{
-					await WriteKeywordBasicAsync(TouchstoneKeywords.End);
-				}
-				else await ValueTask.CompletedTask;
-			}
-
 			internal override bool ShouldSkip((int DestinationPort, int SourcePort) ports)
 			{
 				int numPorts = tsWriter.touchstone.NetworkParameters.NumberOfPorts;
@@ -125,6 +115,16 @@ namespace MicrowaveNetworks.Touchstone.IO
 					return (ports.DestinationPort < ports.SourcePort);
 				}
 				else return false;
+			}
+
+#if NET5_0_OR_GREATER
+			public override async ValueTask DisposeAsync()
+			{
+				if (tsWriter.Writer != null)
+				{
+					await WriteKeywordBasicAsync(TouchstoneKeywords.End);
+				}
+				else await ValueTask.CompletedTask;
 			}
 #endif
 		}

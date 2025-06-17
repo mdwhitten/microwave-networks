@@ -13,10 +13,10 @@ using static MicrowaveNetworks.Touchstone.Internal.Constants;
 
 namespace MicrowaveNetworks.Touchstone.IO
 {
-    /// <summary>
-    /// Provides lower-level support for rendering Touchstone files from network data and Touchstone options and keywords.
-    /// </summary>
-    public sealed partial class TouchstoneWriter : IDisposable
+	/// <summary>
+	/// Provides lower-level support for rendering Touchstone files from network data and Touchstone options and keywords.
+	/// </summary>
+	public sealed partial class TouchstoneWriter : IDisposable
 #if NET5_0_OR_GREATER
 									, IAsyncDisposable
 #endif
@@ -35,10 +35,6 @@ namespace MicrowaveNetworks.Touchstone.IO
 		private TouchstoneWriter(TextWriter writer, Touchstone touchstone, TouchstoneWriterSettings settings)
 		{
 			this.settings = settings ?? new TouchstoneWriterSettings();
-			if (!char.IsWhiteSpace(settings.ColumnSeparationChar))
-			{
-				throw new ArgumentException("The column separation character must be a whitespace character.");
-			}
 			Writer = writer ?? throw new ArgumentNullException(nameof(writer));
 
 			options = new TouchstoneOptionsLine
@@ -233,7 +229,7 @@ namespace MicrowaveNetworks.Touchstone.IO
 			string columnPad = string.Empty;
 			if (settings.UnifiedColumnWidth)
 			{
-				width = "," + settings.ColumnWidth;
+				width = "," + -settings.ColumnWidth;
 				frequencyWidth = "," + (-settings.ColumnWidth);
 				columnPad = string.Empty.PadRight(settings.ColumnWidth);
 			}
@@ -250,11 +246,6 @@ namespace MicrowaveNetworks.Touchstone.IO
 
 			foreach (var (ports, parameter) in matrix.EnumerateParameters(format))
 			{
-				// Supports upper/lower matrix configuration for v2 files
-				if (core.ShouldSkip(ports))
-				{
-					continue;
-				}
 				switch (settings.DataFormat)
 				{
 					case TouchstoneDataFormat.DecibelAngle:
@@ -297,18 +288,29 @@ namespace MicrowaveNetworks.Touchstone.IO
 							(numPorts > 2 && index.DestinationPort > previousDestinationPort))
 				{
 					sb.AppendLine();
-					sb.Append(spaceValue);
+					if (string.IsNullOrEmpty(spaceValue))
+					{
+						// Extra tab to indent past the frequency column
+						sb.Append('\t');
+					}
+					else
+					{
+						sb.Append(spaceValue);
+					}
 					currentColumn = 1;
 					previousDestinationPort = index.DestinationPort;
 				}
-
-				enumer.MoveNext();
-				sb.Append(settings.ColumnSeparationChar);
-				sb.Append(enumer.Current);
-				enumer.MoveNext();
-				sb.Append(settings.ColumnSeparationChar);
-				sb.Append(enumer.Current);
+				for (int i = 0; i < 2; i++)
+				{
+					enumer.MoveNext();
+					sb.Append('\t');
+					if (!core.ShouldSkip(index))
+						sb.Append(enumer.Current);
+					else
+						sb.Append(spaceValue);
+				}
 				currentColumn += 2;
+
 			});
 			return sb.ToString();
 		}

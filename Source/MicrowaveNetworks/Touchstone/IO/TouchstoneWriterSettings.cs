@@ -8,6 +8,11 @@ using MicrowaveNetworks.Touchstone.Internal;
 
 namespace MicrowaveNetworks.Touchstone.IO
 {
+    public enum TouchstoneColumnModes
+    {
+
+    }
+
     /// <summary>
     /// Defines additional formmatting options to use when creating the Touchstone file.
     /// </summary>
@@ -52,8 +57,6 @@ namespace MicrowaveNetworks.Touchstone.IO
         /// text editor with constant width font. The column width is specified in <see cref="ColumnWidth"/>;
         /// </summary>
         public bool UnifiedColumnWidth { get; set; } = true;
-
-        public char ColumnSeparationChar { get; set; } = '\t';
 
         /// <summary>
         /// Specifies the numeric format provider to use when writing the Touchstone data.

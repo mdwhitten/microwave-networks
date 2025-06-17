@@ -59,7 +59,6 @@ namespace MicrowaveNetworksTests.TouchstoneTests
 				FrequencyUnit = header.FrequencyUnit,
 				ColumnWidth = 1,
 				FileVersion = TouchstoneFileVersion.One,
-				ColumnSeparationChar = ' '
 			};
 
 			blankTs.ToString(settings).Should().BeEquivalentTo(fileData);

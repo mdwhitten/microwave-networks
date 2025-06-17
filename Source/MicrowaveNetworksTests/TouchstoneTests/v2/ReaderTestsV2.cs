@@ -148,5 +148,11 @@ namespace MicrowaveNetworksTests.TouchstoneTests
 			touchstone.NetworkParameters[5.0e9][4, 2].Should().Be(s42);
 			touchstone.NetworkParameters[5.0e9][4, 3].Should().Be(s43);
 		}
+
+		[TestMethod]
+		public void TestReadSixPort_MixedMode()
+		{
+			FluentActions.Invoking(() => FromText(SampleReaderFiles.SixPort_v2_MixedMode)).Should().Throw<NotImplementedException>();
+		}
 	}
 }

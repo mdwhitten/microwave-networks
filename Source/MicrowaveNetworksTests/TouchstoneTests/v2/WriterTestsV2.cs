@@ -22,12 +22,14 @@ namespace MicrowaveNetworksTests.TouchstoneTests
 			new object[] { SampleWriterFiles.OnePort_v2, "#0.0000" },
 			new object[] { SampleWriterFiles.TwoPort_v2_21_12, "##.##", TwoPortDataOrderConfig.TwoOne_OneTwo },
 			new object[] { SampleWriterFiles.TwoPort_v2_12_21, "##.##", TwoPortDataOrderConfig.OneTwo_TwoOne },
-			new object[] { SampleWriterFiles.FourPort_v2_FullMatrix, "##0.00", null, TouchstoneMatrixFormat.Full, '\t'}
+			new object[] { SampleWriterFiles.FourPort_v2_FullMatrix, "##0.00", null, TouchstoneMatrixFormat.Full},
+			new object[] { SampleWriterFiles.FourPort_v2_LowerMatrix, "##0.00", null, TouchstoneMatrixFormat.Lower},
+			new object[] { SampleWriterFiles.FourPort_v2_UpperMatrix, "##0.00", null, TouchstoneMatrixFormat.Upper, true}
 		};
 
 		[TestMethod]
 		[DynamicData(nameof(Tests))]
-		public void TestFileOutput(string fileData, string numericFormat, TwoPortDataOrderConfig? twoPortOrder = null, TouchstoneMatrixFormat? format = null, char? columnSeparationChar = ' ')
+		public void TestFileOutput(string fileData, string numericFormat, TwoPortDataOrderConfig? twoPortOrder = null, TouchstoneMatrixFormat? format = null, bool unifiedColumns = false)
 		{
 			StringReader strReader = new StringReader(fileData);
 			TouchstoneReader tsReader = TouchstoneReader.Create(strReader);
@@ -40,16 +42,15 @@ namespace MicrowaveNetworksTests.TouchstoneTests
 
 			var settings = new TouchstoneWriterSettings()
 			{
-				UnifiedColumnWidth = false,
+				UnifiedColumnWidth = unifiedColumns,
 				NumericFormatString = numericFormat,
 				IncludeColumnNames = false,
 				DataFormat = header.Format,
 				FrequencyUnit = header.FrequencyUnit,
-				ColumnWidth = 1,
 				FileVersion = TouchstoneFileVersion.Two,
-				ColumnSeparationChar = columnSeparationChar.GetValueOrDefault(' '),
 				TwoPortDataOrder = twoPortOrder,
-				MatrixFormat = format
+				MatrixFormat = format,
+				ColumnWidth = 5,
 			};
 
 			ts.ToString(settings).Should().BeEquivalentTo(fileData);

@@ -183,6 +183,30 @@ namespace MicrowaveNetworksTests.TouchstoneTests {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to !6-port component shown; note that all five ports are used in some
+        ///!relationship
+        ///[Version] 2.0
+        ///# MHz Y RI R 50
+        ///[Number of Ports] 6
+        ///[Number of Frequencies] 1
+        ///Touchstone® File Format Specification Version 2.0
+        ///Page 23
+        ///[Reference] 50 75 75 50 0.01 0.01
+        ///# MHz Y RI R 50
+        ///[Mixed-Mode Order] D2,3 D6,5 C2,3 C6,5 S4 S1
+        ///[Network Data]
+        ///5.00 8.0 9.0 2.0 -1.0 3.0 -2.0 1.0 3.0 1.0 0.1 0.2 -0.2
+        ///2.0 -1.0 7.0 7.0 1.8 -2.0 -1.0 -1.0 -0.5 0.5 0.2 -0.1
+        ///3.0 -2.0 1.8 -2.0 5.8 6.0 1.2 0.8 0.9 0.7 0.3 -0.5
+        ///1.0 3.0 -1. [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string SixPort_v2_MixedMode {
+            get {
+                return ResourceManager.GetString("SixPort_v2_MixedMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to !2-port network, S-parameter and noise data
         ///!Default MA format, GHz frequencies, 50 &amp; 25 ohm reference, S-parameters
         ///[Version] 2.0

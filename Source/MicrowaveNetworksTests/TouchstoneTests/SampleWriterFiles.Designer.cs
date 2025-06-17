@@ -68,10 +68,12 @@ namespace MicrowaveNetworksTests.TouchstoneTests {
         ///[Reference] 50 75 0.01 0.01
         ///[Matrix Format] Full
         ///[Network Data]
-        ///5.00000 0.60 161.24 0.40 -42.20 0.42 -66.58 0.53 -79.34
-        ///		0.40 -42.20 0.60 161.20 0.53 -79.34 0.42 -66.58
-        ///		0.42 -66.58 0.53 -79.34 0.60 161.24 0.40 -42.20
-        ///		0.53 -79.34 0.42 -66.58 0.40 -42.20 0.60 161.24.
+        ///5.00	0.60	161.24	0.40	-42.20	0.42	-66.58	0.53	-79.34
+        ///		0.40	-42.20	0.60	161.20	0.53	-79.34	0.42	-66.58
+        ///		0.42	-66.58	0.53	-79.34	0.60	161.24	0.40	-42.20
+        ///		0.53	-79.34	0.42	-66.58	0.40	-42.20	0.60	161.24
+        ///[End]
+        ///.
         /// </summary>
         internal static string FourPort_v2_FullMatrix {
             get {
@@ -80,12 +82,55 @@ namespace MicrowaveNetworksTests.TouchstoneTests {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to [Version] 2.0
+        ///# GHz S MA R 50
+        ///[Number of Ports] 4
+        ///[Number of Frequencies] 1
+        ///[Reference] 50 75 0.01 0.01
+        ///[Matrix Format] Lower
+        ///[Network Data]
+        ///5.00000	0.60	161.24
+        ///		0.40	-42.20	0.60	161.20
+        ///		0.42	-66.58	0.53	-79.34	0.60	161.24
+        ///		0.53	-79.34	0.42	-66.58	0.40	-42.20	0.60	161.24.
+        /// </summary>
+        internal static string FourPort_v2_LowerMatrix {
+            get {
+                return ResourceManager.GetString("FourPort_v2_LowerMatrix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to ! 4-port S-parameter data
+        ///! Default impedance is overridden by the [Reference] keyword arguments
+        ///! Note that [Reference] arguments are split across two lines
+        ///! Data cannot be represented using 1.0 syntax
+        ///[Version] 2.0
+        ///# GHz S MA R 50
+        ///[Number of Ports] 4
+        ///[Number of Frequencies] 1
+        ///[Reference] 50 75
+        ///0.01 0.01
+        ///[Matrix Format] Upper
+        ///[Network Data]
+        ///5.00000 0.60 161.24 0.40 -42.20 0.42 -66.58 0.53 -79.34 !row 1
+        ///					0.60 161.20 0.53 -79.34 0.42 -66.58 !row 2
+        ///								0.60 161.24 0.40 -42.20 !row 3
+        ///		 [rest of string was truncated]&quot;;.
+        /// </summary>
+        internal static string FourPort_v2_UpperMatrix {
+            get {
+                return ResourceManager.GetString("FourPort_v2_UpperMatrix", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to # MHz S MA R 75
-        ///100 0.99 -4
-        ///200 0.8 -22
-        ///300 0.707 -45
-        ///400 0.4 -62
-        ///500 0.01 -89
+        ///100	0.99	-4
+        ///200	0.8	-22
+        ///300	0.707	-45
+        ///400	0.4	-62
+        ///500	0.01	-89
         ///.
         /// </summary>
         internal static string OnePort_v1 {
@@ -101,9 +146,10 @@ namespace MicrowaveNetworksTests.TouchstoneTests {
         ///[Number of Frequencies] 3
         ///[Reference] 20
         ///[Network Data]
-        ///1.0000 0.3926 -0.1211
-        ///2.0000 0.3517 -0.3054
-        ///3.0000 0.3419 0.3336
+        ///1.0000	0.3926	-0.1211
+        ///2.0000	0.3517	-0.3054
+        ///3.0000	0.3419	0.3336
+        ///[End]
         ///.
         /// </summary>
         internal static string OnePort_v2 {
@@ -120,9 +166,10 @@ namespace MicrowaveNetworksTests.TouchstoneTests {
         ///[Number of Frequencies] 2
         ///[Reference] 50 25
         ///[Network Data]
-        ///2 .95 -26 .04 76 3.57 157 .66 -14
-        ///22 .61 -144 .14 40 1.31 40 .56 -85
-        ///[End].
+        ///2	.95	-26	.04	76	3.57	157	.66	-14
+        ///22	.61	-144	.14	40	1.31	40	.56	-85
+        ///[End]
+        ///.
         /// </summary>
         internal static string TwoPort_v2_12_21 {
             get {
@@ -138,8 +185,9 @@ namespace MicrowaveNetworksTests.TouchstoneTests {
         ///[Number of Frequencies] 2
         ///[Reference] 50 25
         ///[Network Data]
-        ///2 .95 -26 3.57 157 .04 76 .66 -14
-        ///22 .61 -144 1.31 40 .14 40 .56 -85
+        ///2	.95	-26	3.57	157	.04	76	.66	-14
+        ///22	.61	-144	1.31	40	.14	40	.56	-85
+        ///[End]
         ///.
         /// </summary>
         internal static string TwoPort_v2_21_12 {

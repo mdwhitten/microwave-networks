@@ -157,7 +157,7 @@ namespace MicrowaveNetworks.Touchstone.IO
         #region Parsing
         private (TouchstoneKeywords Keyword, string Value) ParseKeyword(string line)
         {
-            var match = Regex.Match(line, @"\[([\w\s-]+)\]\s?([\w\d\.\s]+)?");
+            var match = Regex.Match(line, @"\[([\w\s-]+)\]\s?([\w\d\.\s,]+)?");
 
             if (!match.Success) ThrowHelper("Keywords", "Bad keyword format");
 

@@ -25,7 +25,6 @@ namespace MicrowaveNetworksTests.TouchstoneTests
 					FrequencyUnit = TouchstoneFrequencyUnit.MHz,
 					Parameter = ParameterType.Scattering,
 					Resistance = 75,
-					Reactance = 0,
 					Format = TouchstoneDataFormat.MagnitudeAngle
 				}},
                 // Validates spacing with one or more whitespace characters
@@ -59,7 +58,6 @@ namespace MicrowaveNetworksTests.TouchstoneTests
                 new object[] {"# R 75", new TouchstoneOptionsLine
 				{
 					Resistance = 75,
-					Reactance = 0,
 				}},
                 // Missing all values (valid per spec)
                 new object[] {"#", new TouchstoneOptionsLine() },
@@ -69,7 +67,6 @@ namespace MicrowaveNetworksTests.TouchstoneTests
 					FrequencyUnit = TouchstoneFrequencyUnit.Hz,
 					Parameter = ParameterType.Scattering,
 					Resistance = 50,
-					Reactance = 0,
 					Format = TouchstoneDataFormat.DecibelAngle,
 				} },
                 // Standard complete header complex resistance
