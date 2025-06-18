@@ -8,11 +8,6 @@ using MicrowaveNetworks.Touchstone.Internal;
 
 namespace MicrowaveNetworks.Touchstone.IO
 {
-    public enum TouchstoneColumnModes
-    {
-
-    }
-
     /// <summary>
     /// Defines additional formmatting options to use when creating the Touchstone file.
     /// </summary>

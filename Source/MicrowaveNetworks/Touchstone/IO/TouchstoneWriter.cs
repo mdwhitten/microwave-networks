@@ -88,8 +88,6 @@ namespace MicrowaveNetworks.Touchstone.IO
 		/// <param name="settings">The <see cref="TouchstoneWriterSettings"/> used to configure the <see cref="TouchstoneWriter"/> instance. 
 		/// If <paramref name="settings"/> is null the default settings will be used.</param>
 		/// <param name="touchstone">The Touchstone network data to write to the file.</param>
-		/// If the <see cref="TouchstoneParameterAttribute"/> "R" is complex it will be represented by its real part. 
-		/// </param>
 		/// <returns>A new <see cref="TouchstoneWriter"/> object.</returns>
 		/// <exception cref="ArgumentNullException">The <paramref name="writer"/> value is null.</exception>
 		public static TouchstoneWriter Create(TextWriter writer, Touchstone touchstone, TouchstoneWriterSettings settings)
@@ -110,8 +108,6 @@ namespace MicrowaveNetworks.Touchstone.IO
 		/// </summary>
 		/// <param name="sb">The <see cref="StringBuilder"/> to which you want to write. The Touchstone data will be appended to this <see cref="StringBuilder"/>.</param>
 		/// <param name="settings">The <see cref="TouchstoneWriterSettings"/> used to configure the <see cref="TouchstoneWriter"/> instance. 
-		/// If the <see cref="TouchstoneParameterAttribute"/> "R" is complex it will be represented by its real part. 
-		/// </param>
 		/// If <paramref name="settings"/> is null the default settings will be used.</param>
 		/// <param name="touchstone">The Touchstone network data to write to the file.</param>
 		/// <returns>A new <see cref="TouchstoneWriter"/> object.</returns>
@@ -321,8 +317,7 @@ namespace MicrowaveNetworks.Touchstone.IO
 		}
 		#endregion
 		#region Public Write Functions
-		/// <summary>Writes the <see cref="Options"/> object to the options line in the Touchstone file. If <see cref="TouchstoneKeywords.Version"/> in 
-		/// <see cref="Keywords"/> is <see cref="TouchstoneFileVersion.Two"/>, the keywords will also be written to the file.</summary>
+		/// <summary>Writes the the options line in the Touchstone file.</summary>
 		/// <remarks>This method may only be called once for a file. If it is not called explicitly, the first call to <see cref="WriteData(double, NetworkParametersMatrix)"/>
 		/// will implicitly call this method.</remarks>
 		public void WriteHeader()
@@ -334,8 +329,7 @@ namespace MicrowaveNetworks.Touchstone.IO
 
 			headerWritten = true;
 		}
-		/// <summary>Asynchronously writes the <see cref="Options"/> object to the options line in the Touchstone file. If <see cref="TouchstoneKeywords.Version"/> in 
-		/// <see cref="Keywords"/> is <see cref="TouchstoneFileVersion.Two"/>, the keywords will also be written to the file.</summary>
+		/// <summary>Asynchronously writes the options line in the Touchstone file.</summary>
 		/// <remarks>This method may only be called once for a file. If it is not called explicitly, the first call to <see cref="WriteDataAsync(double, NetworkParametersMatrix)"/>
 		/// will implicitly call this method.</remarks>
 		public async Task WriteHeaderAsync()
@@ -349,6 +343,9 @@ namespace MicrowaveNetworks.Touchstone.IO
 			headerWritten = true;
 		}
 
+		/// <summary>
+		/// Writes the network data to the Touchstone file.
+		/// </summary>
 		public void WriteNetworkData()
 		{
 			if (!headerWritten) WriteHeader();
@@ -364,6 +361,10 @@ namespace MicrowaveNetworks.Touchstone.IO
 				WriteData(data);
 			}
 		}
+
+		/// <summary>
+		/// Writes the network data to the Touchstone file.
+		/// </summary>
 		public async Task WriteNetworkDataAsync(CancellationToken token = default)
 		{
 			if (!headerWritten) await WriteHeaderAsync();
@@ -425,7 +426,7 @@ namespace MicrowaveNetworks.Touchstone.IO
 		}
 		/// <summary>Invokes <see cref="TextWriter.Flush"/> on the underlying object to clear the buffers and cause all data to be written.</summary>
 		public void Flush() => Writer.Flush();
-		/// <summary>Invokes <see cref="TextWriter.FlushAsync"/> on the underlying object to asynchronously clear the buffers and cause all data to be written.</summary>
+		/// <summary>Invokes <see cref="TextWriter.FlushAsync()"/> on the underlying object to asynchronously clear the buffers and cause all data to be written.</summary>
 		public async Task FlushAsync() => await Writer.FlushAsync();
 		#endregion
 		#region IDisposable Support

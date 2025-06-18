@@ -12,7 +12,6 @@ namespace MicrowaveNetworks.Touchstone.IO
 	{
 		class TouchstoneReaderCoreV2 : TouchstoneReaderCore
 		{
-			public TouchstoneFileVersion Version;
 			public int? NumberOfPorts;
 			public TwoPortDataOrderConfig? TwoPortDataOrder;
 			public int? NumberOfFrequencies;
@@ -94,7 +93,6 @@ namespace MicrowaveNetworks.Touchstone.IO
 								NumberOfNoiseFrequencies = int.Parse(value);
 								tsReader.NoiseData = new Dictionary<double, TouchstoneNoiseData>();
 								throw new NotImplementedException("Support for noise data has not been implemented");
-								break;
 							case TouchstoneKeywords.Reference:
 								string references = ReadToNextKeyword(value);
 								tsReader.Reference = references.Split(allWhitespace, StringSplitOptions.RemoveEmptyEntries).Select(r => float.Parse(r.Trim())).ToList();
@@ -105,7 +103,6 @@ namespace MicrowaveNetworks.Touchstone.IO
 							case TouchstoneKeywords.MixedModeOrder:
 								MixedModeOrder = ReadToNextKeyword(value);
 								throw new NotImplementedException("Support for mixed mode parameters has not been implemented yet.");
-								break;
 							case TouchstoneKeywords.BeginInformation:
 								string information = ReadToNextKeyword(value);
 								tsReader.AdditionalInformation = information;

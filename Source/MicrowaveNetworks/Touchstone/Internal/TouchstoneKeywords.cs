@@ -2,7 +2,7 @@
 
 namespace MicrowaveNetworks.Touchstone.Internal
 {
-    public enum TouchstoneKeywords
+    internal enum TouchstoneKeywords
     {
         [TouchstoneParameter("Version")]
         Version,

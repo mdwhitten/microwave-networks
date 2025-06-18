@@ -16,9 +16,6 @@ namespace MicrowaveNetworksTests.TouchstoneTests
     [TestClass]
     public class WriterTestsV1
     {
-        StringBuilder sb;
-        TouchstoneWriter writer;
-
         public static IEnumerable<object[]> TestMatrices => new[]
         {
             new object[] { new ScatteringParametersMatrix(1) { [1,1] = new NetworkParameter(0.5, -0.5) } },
