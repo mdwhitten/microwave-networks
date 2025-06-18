@@ -7,12 +7,11 @@ Download:
 
 
 ## Currently Supported Features
-- Full support for Touchstone file format version 1.0
+- Full support for Touchstone file formats version 1.0 and 2.0
 - Cascading/embedding/de-embedding 2-port networks
 - S and T parameters
 
 ## Future/In Development Features
-- Full support for Touchstone file format version 2.0
 - Cascading *n-port* networks using the [symmetry extension method](https://ieeexplore.ieee.org/document/4657394)
 - Other parameter types (admittance, impedance, etc.)
 - Interpolation
@@ -95,23 +94,28 @@ var filteredInsertionLoss = from FrequencyParametersPair pair in Touchstone.Read
 The `TouchstoneWriter` and `TouchstoneReader` classes allow for precise control over Touchstone File IO, including full support for asynchronous file operations. This example uses the `exampleData` collection shown in [Create Frequency-Dependent Network Data](#create-frequency-dependent-network-data).
 
 ```c#
+Touchstone sample = Touchstone.Create<ScatteringParametersMatrix>(4, 50);
+			
+// Fill file with data
+
 TouchstoneWriterSettings settings = new TouchstoneWriterSettings
 {
-    IncludeColumnNames = true,
-    NumericFormatString = "G3"
+	IncludeColumnNames = true,
+	NumericFormatString = "G3",
+	FileVersion = TouchstoneFileVersion.Two,
+	FrequencyUnit = TouchstoneFrequencyUnit.GHz
 };
 
-using (TouchstoneWriter writer = TouchstoneWriter.Create(@"C:\example_data.s2p", settings))
+using (TouchstoneWriter writer = TouchstoneWriter.Create(@"C:\example_data.s2p", sample, settings))
 {
-    writer.Options.FrequencyUnit = FrequencyUnit.GHz;
+	writer.WriteCommentLine("This is an example comment at the top of the file.");
+	// The header will be written automatically if not called manually as soon as the first call is made to WriteData(). 
+	// However, you can manually invoke this if you would like to control where it is placed in relation to other comments.
+	writer.WriteHeader();
 
-    writer.WriteCommentLine("This is an example comment at the top of the file.");
-    // The header will be written automatically if not called manually as soon as the first call is made to WriteData(). 
-    // However, you can manually invoke this if you would like to control where it is placed in relation to other comments.
-    writer.WriteHeader();
+	writer.WriteCommentLine("Now the network data begins");
 
-    foreach (FrequencyParametersPair pair in exampleData)
-        writer.WriteData(pair);
+	writer.WriteNetworkData();
 }
 ```
 
