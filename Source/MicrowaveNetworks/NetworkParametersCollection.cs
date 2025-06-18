@@ -404,16 +404,6 @@ namespace MicrowaveNetworks
 
     }
 
-    enum InteropolationMethods
-    {
-        Linear
-    }
-    internal class InteropolationOptions
-    {
-        public bool Enabled;
-        public InteropolationMethods Method;
-    }
-
     /// <summary>
     /// Contains exension methods for <see cref="IEnumerable{T}"/> types to create a <see cref="NetworkParametersCollection{TMatrix}"/>.
     /// </summary>

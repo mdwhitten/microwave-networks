@@ -7,14 +7,14 @@ using MicrowaveNetworks.Internal;
 using System.Threading.Tasks;
 using System.Text;
 using MicrowaveNetworks.Matrices;
+using MicrowaveNetworks.Touchstone.Internal;
+
+#nullable enable
 
 namespace MicrowaveNetworks.Touchstone
 {
-
-
-
     /// <summary>
-    /// Defines a complete Touchstone file according to the version 2.0 specification including the frequency dependent network data as well as the file options and keywords.
+    /// Defines a complete Touchstone file according to the version 2.0 specification including the frequency dependent network data.
     /// </summary>
     /// <remarks>Use this class when writing to a Touchstone file for complete control of the final output, or when making in-memory modifications/round-trip edits to an existing file.
     /// If only the network data is needed from the file, you can use the <see cref="ReadAllData(string)"/> function to quickly access the data. Alternatively, you
@@ -23,60 +23,101 @@ namespace MicrowaveNetworks.Touchstone
     public class Touchstone
     {
         /// <summary>
-        /// Gets or sets the <see cref="TouchstoneOptions"/> present in the Touchstone file.
+        /// Gets the <see cref="INetworkParametersCollection"/> representing the network data present in the Touchstone file.
         /// </summary>
-        public TouchstoneOptions Options { get; set; } = new TouchstoneOptions();
+        public INetworkParametersCollection NetworkParameters { get; }
+
+        /// <summary>Specifies the reference resistance in ohms, where <see cref="Resistance"/> is a real, positive number of ohms.
+        /// The default value is set to 50 ohms.</summary>
+        [TouchstoneParameter("R")]
+        public float Resistance { get; set; } = 50;
+		/// <summary>
+		/// Specifies the reference reactance in ohms, where <see cref="Reactance"/> is a real number of ohms. 
+		/// If the <see cref="TouchstoneParameterAttribute"/> "R" is complex it will be represented by its imaginary part.
+		/// Otherwise it is considered to be 0.
+		/// </summary>
+		/// <remarks>This parameter is not specified by Touchstone standard while scikit-rf has an implementation for it.</remarks>
+		[TouchstoneParameter("R")]
+		public float? Reactance { get; set; }
+
+		/// <summary>Provides a per-port definition of the reference environment used for the S-parameter measurements in the network data.</summary>
+		[TouchstoneKeyword("Reference")]
+        public List<float>? Reference { get; }
+
         /// <summary>
-        /// Gets or sets the <see cref="TouchstoneKeywords"/> present in the Touchstone file.
+        /// Gets the noise parameter data associated with the Touchstone file.
         /// </summary>
-        /// <remarks>Keywords are only valid when <see cref="TouchstoneKeywords.Version"/> is 2.0.</remarks>
-        public TouchstoneKeywords Keywords { get; set; } = new TouchstoneKeywords();
+        [TouchstoneKeyword("NoiseData")]
+        public Dictionary<double, TouchstoneNoiseData>? NoiseData { get; }
+
+        /// <summary>Contains additional metadata saved in the [Begin/End Information] section of the Touchstone file.</summary>
+        public string? AdditionalInformation { get; set; }
+
+		/// <summary>
+		/// Initializes a new Touchstone object by loading the data from the specified file path.
+		/// </summary>
+		/// <param name="filePath">The file path containing Touchstone data.</param>
+		public Touchstone(string filePath)
+        {
+            using TouchstoneReader tsReader = TouchstoneReader.Create(filePath);
+
+            NetworkParameters = tsReader.ReadToEnd();
+            Resistance = tsReader.Resistance;
+            Reactance = tsReader.Reactance;
+            if (tsReader.Reference != null) Reference = new List<float>(tsReader.Reference);
+            if (tsReader.NoiseData != null) NoiseData = tsReader.NoiseData;
+            AdditionalInformation = tsReader.AdditionalInformation;
+        }
 
         /// <summary>
-        /// Gets or sets the <see cref="INetworkParametersCollection"/> representing the network data present in the Touchstone file.
+        /// Initializes a new Touchstone object by parsing the data from the specified <see cref="TextReader"/>.
         /// </summary>
-        public INetworkParametersCollection NetworkParameters { get; set; }
+        /// <param name="reader">The <see cref="TextReader"/> to parse the Touchstone data from.</param>
+		public Touchstone(TextReader reader)
+		{
+			using TouchstoneReader tsReader = TouchstoneReader.Create(reader);
 
-        #region Constructors
-        internal Touchstone() { }
+			NetworkParameters = tsReader.ReadToEnd();
+			Resistance = tsReader.Resistance;
+			Reactance = tsReader.Reactance;
+			if (tsReader.Reference != null) Reference = new List<float>(tsReader.Reference);
+			if (tsReader.NoiseData != null) NoiseData = tsReader.NoiseData;
+			AdditionalInformation = tsReader.AdditionalInformation;
+		}
 
-        /// <summary>Creates a new empty <see cref="Touchstone"/> with a the specified ports and options.</summary>
-        /// <param name="numPorts">The number of ports of the device that the Touchstone file will represent.</param>
-        /// <param name="opts">The <see cref="TouchstoneOptions"/> that will define the format of the resulting file.</param>
-        public Touchstone(int numPorts, TouchstoneOptions opts)
+		/// <summary>
+		/// Initializes a new <see cref="Touchstone"/> object with the specified number of ports with an empty <see cref="NetworkParametersCollection{TMatrix}"/> of type <see cref="ScatteringParametersMatrix"/> and a 
+		/// resistance of 50 ohms.
+		/// </summary>
+		/// <param name="numberOfPorts">Specifies the number of ports for the <see cref="NetworkParameters"/> collection.</param>
+		public Touchstone(int numberOfPorts)
         {
-            NetworkParameters = opts.Parameter switch
-            {
-                ParameterType.Scattering => new NetworkParametersCollection<ScatteringParametersMatrix>(numPorts),
-                _ => throw new NotImplementedException()
-            };
-            Options = opts;
-        }
-        /// <summary>Creates a new Touchstone file from an existing <see cref="INetworkParametersCollection"/> with default settings.</summary>
-        /// <param name="parameters">Specifies the network data that will comprise this Touchstone file.</param>
-        public Touchstone(INetworkParametersCollection parameters)
-        {
-            NetworkParameters = parameters;
-            Keywords.NumberOfPorts = parameters.NumberOfPorts;
-        }
-        /// <summary>
-        /// Creates a new <see cref="Touchstone"/> object by parsing the options, keywords, and network data contained within the specified file.
-        /// </summary>
-        /// <param name="filePath">The Touchstone (*.snp) file to be loaded.</param>
-        /// <exception cref="ArgumentNullException"></exception>
-        /// <exception cref="FileNotFoundException"></exception>
-        /// <exception cref="InvalidDataException"></exception>
-        public Touchstone(string filePath)
-        {
-            using TouchstoneReader reader = TouchstoneReader.Create(filePath);
-            Options = reader.Options;
-            Keywords = reader.Keywords;
+            NetworkParameters = new NetworkParametersCollection<ScatteringParametersMatrix>(numberOfPorts);
 
-            NetworkParameters = reader.ReadToEnd();
+            Resistance = 50.0f;
         }
-        #endregion
-        #region IO
 
+		/// <summary>
+		/// Creates a new Toucshtone object with the specified number of ports and a resistance of 50 ohms, using the specified type of <see cref="NetworkParametersMatrix"/>.
+		/// </summary>
+		/// <typeparam name="TMatrixType">Specifies the network parameter type of the new Touchstone object.</typeparam>
+		/// <param name="numberOfPorts">Specifies the number of ports for the <see cref="NetworkParameters"/> collection.</param>
+		/// <param name="resistance">Specifies reference resistance in ohms.</param>
+		/// <returns>A new Touchstone object.</returns>
+		public static Touchstone Create<TMatrixType>(int numberOfPorts, float resistance = 50.0f) where TMatrixType : NetworkParametersMatrix
+        {
+            NetworkParametersCollection<TMatrixType> collection = new NetworkParametersCollection<TMatrixType>(numberOfPorts);
+
+            return new Touchstone(collection, resistance);
+        }
+		/// <summary>Initializes a new Toucshtone object with the specified number network data and resistance value.</summary>
+		/// <param name="networkParameters">Specifies the network data.</param>
+		/// <param name="resistance">Specifies reference resistance in ohms.</param>
+		public Touchstone(INetworkParametersCollection networkParameters, float resistance = 50)
+        {
+            NetworkParameters = networkParameters;
+            Resistance = resistance;
+        }
 
         /// <summary>Writes the Touchstone file object to the specified file with default writer settings.</summary>
         /// <param name="filePath">The *.sNp file to be created or overwritten.</param>
@@ -93,15 +134,9 @@ namespace MicrowaveNetworks.Touchstone
         {
             if (filePath == null) throw new ArgumentNullException(nameof(filePath));
 
-            using (TouchstoneWriter writer = TouchstoneWriter.Create(filePath, settings))
+            using (TouchstoneWriter writer = TouchstoneWriter.Create(filePath, this, settings))
             {
-                writer.Options = Options;
-                writer.Keywords = Keywords;
-
-                foreach (var pair in NetworkParameters)
-                {
-                    writer.WriteData(pair);
-                }
+                writer.WriteNetworkData();
                 writer.Flush();
             };
         }
@@ -122,41 +157,35 @@ namespace MicrowaveNetworks.Touchstone
         {
             if (filePath == null) throw new ArgumentNullException(nameof(filePath));
 
-            using (TouchstoneWriter writer = TouchstoneWriter.Create(filePath, settings))
+            using (TouchstoneWriter writer = TouchstoneWriter.Create(filePath, this, settings))
             {
-                writer.Options = Options;
-                writer.Keywords = Keywords;
-                writer.CancelToken = token;
-
-                foreach (var pair in NetworkParameters)
-                {
-                    token.ThrowIfCancellationRequested();
-                    await writer.WriteDataAsync(pair);
-                }
-
-                writer.Flush();
+                //writer.CancelToken = token;
+                await writer.WriteNetworkDataAsync(token);
+                await writer.FlushAsync();
             };
         }
 
         /// <summary>
-        /// Renders the object as a properly formatted Touchstone file based on the configured Touchstone options.
+        /// Renders the object as a properly formatted Touchstone file with default <see cref="TouchstoneWriterSettings"/>.
         /// </summary>
         /// <returns>A string representation of a Touchstone file.</returns>
-        public override string ToString()
+        public override string ToString() => ToString(new TouchstoneWriterSettings());
+
+		/// <summary>
+		/// Renders the object as a properly formatted Touchstone file with the specified <see cref="TouchstoneWriterSettings"/>.
+		/// </summary>
+        /// <param name="settings">Specifies the settings used to format the Touchstone file.</param>
+		/// <returns>A string representation of a Touchstone file.</returns>
+		public string ToString(TouchstoneWriterSettings settings)
         {
-            StringBuilder sb = new StringBuilder();
+			StringBuilder sb = new StringBuilder();
 
-            using TouchstoneWriter writer = TouchstoneWriter.Create(sb);
-            writer.Options = Options;
-            writer.Keywords = Keywords;
-
-            foreach (var data in NetworkParameters)
+            using (TouchstoneWriter writer = TouchstoneWriter.Create(sb, this, settings))
             {
-                writer.WriteData(data);
+                writer.WriteNetworkData();
             }
-            return sb.ToString();
-        }
-        #endregion
+			return sb.ToString();
+		}
 
         #region Static Functions
         /// <summary>
@@ -196,6 +225,7 @@ namespace MicrowaveNetworks.Touchstone
                 yield return pair;
             }
         }
+
         /// <summary>
         /// Reads all frequency-dependent network parameter data from the specified file.
         /// </summary>
@@ -211,6 +241,7 @@ namespace MicrowaveNetworks.Touchstone
             using TouchstoneReader tsReader = TouchstoneReader.Create(filePath);
             return tsReader.ReadToEnd();
         }
+
         /// <summary>
         /// Reads all frequency-dependent network parameter data from the specified file. A <see cref="InvalidCastException"/> will be
         /// thrown if the Touchstone options line indicates a different type of data in the file than the requested type.
@@ -236,6 +267,7 @@ namespace MicrowaveNetworks.Touchstone
                 return (NetworkParametersCollection<T>)tsReader.ReadToEnd();
             }
         }
+
         /// <summary>
         /// Reads all frequency-dependent network parameter data from the specified <see cref="TextReader"/>.
         /// </summary>
@@ -249,6 +281,7 @@ namespace MicrowaveNetworks.Touchstone
             using TouchstoneReader tsReader = TouchstoneReader.Create(reader);
             return tsReader.ReadToEnd();
         }
+
         /// <summary>
         /// Reads all frequency-dependent network parameter data of type <typeparamref name="T"/> from the specified <see cref="TextReader"/>. A <see cref="InvalidCastException"/> will be
         /// thrown if the Touchstone options line indicates a different type of data in the file than the requested type.

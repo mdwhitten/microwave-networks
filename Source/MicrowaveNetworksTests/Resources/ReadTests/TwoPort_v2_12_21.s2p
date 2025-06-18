@@ -1,0 +1,12 @@
+﻿!2-port network, S-parameter and noise data
+!Default MA format, GHz frequencies, 50 & 25 ohm reference, S-parameters
+[Version] 2.0
+#
+[Number of Ports] 2
+[Two-Port Data Order] 12_21
+[Number of Frequencies] 2
+[Reference] 50 25.0
+[Network Data]
+2 .95 -26 .04 76 3.57 157 .66 -14
+22 .60 -144 .14 40 1.30 40 .56 -85
+[End]

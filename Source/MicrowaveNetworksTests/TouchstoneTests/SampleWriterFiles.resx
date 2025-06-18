@@ -118,10 +118,25 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <assembly alias="System.Windows.Forms" name="System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089" />
-  <data name="FourPort_v1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\FourPort_v1.s2p;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  <data name="FourPort_v2_FullMatrix" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\WriteTests\FourPort_v2_FullMatrix.s4p;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="FourPort_v2_LowerMatrix" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\WriteTests\FourPort_v2_LowerMatrix.s4p;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="FourPort_v2_UpperMatrix" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\WriteTests\FourPort_v2_UpperMatrix.s4p;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
   <data name="OnePort_v1" type="System.Resources.ResXFileRef, System.Windows.Forms">
-    <value>..\Resources\OnePort_v1.s2p;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+    <value>..\Resources\WriteTests\OnePort_v1.s2p;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;Windows-1252</value>
+  </data>
+  <data name="OnePort_v2" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\WriteTests\OnePort_v2.s2p;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="TwoPort_v2_12_21" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\WriteTests\TwoPort_v2_12_21.s2p;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
+  <data name="TwoPort_v2_21_12" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\WriteTests\TwoPort_v2_21_12.s2p;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
 </root>

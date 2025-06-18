@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace MicrowaveNetworks.Touchstone.IO
+namespace MicrowaveNetworks.Touchstone.Internal
 {
     /// <summary>
     /// Simple helper class to map between the text values from the Touchstone file and the enum values defined by reading the
@@ -57,6 +57,15 @@ namespace MicrowaveNetworks.Touchstone.IO
         /// <param name="name"></param>
         /// <returns></returns>
         public static T FromTouchstoneValue(string name) => valueLookup[name.ToUpper()];
+
+        /// <summary>
+        /// Returns the appropriate enum type <typeparamref name="T"/> matched to the <paramref name="name"/> value.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <param name="value">Returns the converted value </param>
+        /// <returns></returns>
+        public static bool TryFromTouchstoneValue(string name, out T value) => valueLookup.TryGetValue(name.ToUpper(), out value);
+
         /// <summary>
         ///  Returns the value of <see cref="TouchstoneParameterAttribute.FieldName"/> if <paramref name="value"/> has
         ///  this attribute. Otherwise, simply returns the name of <paramref name="value"/>.
