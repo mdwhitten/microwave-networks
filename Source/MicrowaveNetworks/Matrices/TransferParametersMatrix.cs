@@ -12,13 +12,20 @@ namespace MicrowaveNetworks.Matrices
         /// <inheritdoc/>
         protected override string MatrixPrefix => "T";
 
-        private TransferParametersMatrix(int numPorts, DenseMatrix matrix)
+        /// <summary> Internal constructor for creating a <see cref="TransferParametersMatrix"/> from a <see cref="DenseMatrix"/>.</summary>
+        /// </summary>
+        /// <param name="numPorts"></param>
+        /// <param name="matrix"></param>
+        internal TransferParametersMatrix(int numPorts, DenseMatrix matrix)
             : base(numPorts, matrix) { }
 
-        /// <summary>
-        /// Creates a new <see cref="TransferParametersMatrix"/> with the specified number of ports.
         /// </summary>
-        public TransferParametersMatrix(int numPorts) : base(numPorts) { }
+		/// <summary>
+		/// Creates a new <see cref="ScatteringParametersMatrix"/> from a <see cref="DenseMatrix"/> with the specified number of ports.
+		/// </summary>
+		/// <param name="numPorts"></param>
+		/// <param name="matrix"></param>
+		public TransferParametersMatrix(int numPorts) : base(numPorts) { }
 
         internal TransferParametersMatrix(SymmetryMatrix symmetryMatrix)
             : base(symmetryMatrix.NumberOfPorts)
@@ -47,6 +54,12 @@ namespace MicrowaveNetworks.Matrices
 
         /// <inheritdoc/>
         protected override TransferParametersMatrix ToTParameters() => this;
+
+        /// <summary>
+        /// Returns a new <see cref="TransferParametersMatrix"/> with the <see cref="Matrix"/> inverted.
+        /// </summary>
+        /// <returns></returns>
+        public TransferParametersMatrix Inverse() => new TransferParametersMatrix(NumPorts, (DenseMatrix)Matrix.Inverse());
 
         /// <summary>
         /// Converts the <see cref="TransferParametersMatrix"/> to a <see cref="ScatteringParametersMatrix"/>.

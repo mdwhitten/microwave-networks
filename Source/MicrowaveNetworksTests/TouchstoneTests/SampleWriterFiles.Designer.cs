@@ -89,10 +89,12 @@ namespace MicrowaveNetworksTests.TouchstoneTests {
         ///[Reference] 50 75 0.01 0.01
         ///[Matrix Format] Lower
         ///[Network Data]
-        ///5.00000	0.60	161.24
-        ///		0.40	-42.20	0.60	161.20
-        ///		0.42	-66.58	0.53	-79.34	0.60	161.24
-        ///		0.53	-79.34	0.42	-66.58	0.40	-42.20	0.60	161.24.
+        ///5.00	0.60	161.24						
+        ///		0.40	-42.20	0.60	161.20				
+        ///		0.42	-66.58	0.53	-79.34	0.60	161.24		
+        ///		0.53	-79.34	0.42	-66.58	0.40	-42.20	0.60	161.24
+        ///[End]
+        ///.
         /// </summary>
         internal static string FourPort_v2_LowerMatrix {
             get {
@@ -101,22 +103,19 @@ namespace MicrowaveNetworksTests.TouchstoneTests {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to ! 4-port S-parameter data
-        ///! Default impedance is overridden by the [Reference] keyword arguments
-        ///! Note that [Reference] arguments are split across two lines
-        ///! Data cannot be represented using 1.0 syntax
-        ///[Version] 2.0
+        ///   Looks up a localized string similar to [Version] 2.0
         ///# GHz S MA R 50
         ///[Number of Ports] 4
         ///[Number of Frequencies] 1
-        ///[Reference] 50 75
-        ///0.01 0.01
+        ///[Reference] 50 75 0.01 0.01
         ///[Matrix Format] Upper
         ///[Network Data]
-        ///5.00000 0.60 161.24 0.40 -42.20 0.42 -66.58 0.53 -79.34 !row 1
-        ///					0.60 161.20 0.53 -79.34 0.42 -66.58 !row 2
-        ///								0.60 161.24 0.40 -42.20 !row 3
-        ///		 [rest of string was truncated]&quot;;.
+        ///5.00 	0.60 	161.00	0.40 	-42.20	0.42 	-66.58	0.53 	-79.34
+        ///     	     	     	0.60 	161.20	0.53 	-79.34	0.42 	-66.58
+        ///     	     	     	     	     	0.60 	161.24	0.40 	-42.20
+        ///     	     	     	     	     	     	     	0.60 	161.24
+        ///[End]
+        ///.
         /// </summary>
         internal static string FourPort_v2_UpperMatrix {
             get {
