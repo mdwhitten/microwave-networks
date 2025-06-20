@@ -1,0 +1,10 @@
+﻿[Version] 2.0
+# GHz S MA R 50
+[Number of Ports] 2
+[Two-Port Data Order] 21_12
+[Number of Frequencies] 2
+[Reference] 50 25
+[Network Data]
+2	.95	-26	3.57	157	.04	76	.66	-14
+22	.61	-144	1.31	40	.14	40	.56	-85
+[End]

@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net472;net5.0;net8.0</TargetFrameworks>
+		<ImplicitUsings>disable</ImplicitUsings>
+
+		<IsPackable>false</IsPackable>
+		<IsTestProject>true</IsTestProject>
+	</PropertyGroup>
+	<ItemGroup>
+		<ProjectReference Include="..\..\Source\MicrowaveNetworks\MicrowaveNetworks.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<Compile Update="TouchstoneTests\SampleReaderFiles.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>SampleReaderFiles.resx</DependentUpon>
+		</Compile>
+		<Compile Update="TouchstoneTests\SampleWriterFiles.Designer.cs">
+		  <DesignTime>True</DesignTime>
+		  <AutoGen>True</AutoGen>
+		  <DependentUpon>SampleWriterFiles.resx</DependentUpon>
+		</Compile>
+	</ItemGroup>
+	<ItemGroup>
+		<EmbeddedResource Update="TouchstoneTests\SampleReaderFiles.resx">
+			<Generator>ResXFileCodeGenerator</Generator>
+			<LastGenOutput>SampleReaderFiles.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+		<EmbeddedResource Update="TouchstoneTests\SampleWriterFiles.resx">
+		  <Generator>ResXFileCodeGenerator</Generator>
+		  <LastGenOutput>SampleWriterFiles.Designer.cs</LastGenOutput>
+		</EmbeddedResource>
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="coverlet.collector" Version="6.0.0" />
+		<PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+		<PackageReference Include="MSTest.TestAdapter" Version="3.1.1" />
+		<PackageReference Include="MSTest.TestFramework" Version="3.1.1" />
+		<PackageReference Include="FluentAssertions" Version="8.3.0" />
+	</ItemGroup>
+</Project>

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 
-namespace MicrowaveNetworks.Touchstone.IO
+namespace MicrowaveNetworks.Touchstone.Internal
 {
     internal class FieldNameLookup<T>
     {

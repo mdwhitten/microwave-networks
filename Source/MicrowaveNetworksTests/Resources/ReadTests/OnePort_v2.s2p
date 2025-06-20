@@ -1,0 +1,11 @@
+﻿!1-port S-parameter file, multiple frequency points
+[Version] 2.0
+# MHz S MA
+[Number of Ports] 1
+[Number of Frequencies] 5
+[Reference] 20.0
+[Network Data]
+!freq ReS11 ImS11
+1.0000 0.3926 -0.1211
+2.0000 0.3517 -0.3054
+3.0000 0.3419 0.3336

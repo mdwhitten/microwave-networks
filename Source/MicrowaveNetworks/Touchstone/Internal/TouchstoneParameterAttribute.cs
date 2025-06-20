@@ -1,25 +1,42 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace MicrowaveNetworks.Touchstone
+namespace MicrowaveNetworks.Touchstone.Internal
 {
-
-
-    using IO;
-    internal class TouchstoneKeywordFormatter
+    internal class TouchstoneParameterAttribute : Attribute
     {
-        internal string KeywordText { get; set; }
-       /* public virtual T ParseKeyword<T>(string keyword)
-        {
-
-        }*/
-        public virtual string FormatFullKeyword<T>(string keyword, T value)
-        {
-            return keyword.FormatKeyword() + " " + value.ToString();
-        }
+        public string FieldName { get; }
+        public TouchstoneParameterAttribute(string fieldName) => FieldName = fieldName;
     }
-    /*
+
+    internal sealed class TouchstoneKeywordAttribute : TouchstoneParameterAttribute
+    {
+        TouchstoneKeywordFormatter formatter;
+
+        public TouchstoneKeywordAttribute(string fieldName)
+            : base(fieldName)
+        {
+            formatter = new TouchstoneKeywordFormatter() { KeywordText = fieldName };
+        }
+        public TouchstoneKeywordAttribute(string fieldName, TouchstoneKeywordFormatter formatter)
+            : base(fieldName)
+        {
+            formatter.KeywordText = fieldName;
+            this.formatter = formatter;
+        }
+	}
+    internal class TouchstoneKeywordFormatter
+	{
+		internal string KeywordText { get; set; }
+		/* public virtual T ParseKeyword<T>(string keyword)
+		 {
+
+		 }*/
+		public virtual string FormatFullKeyword<T>(string keyword, T value)
+		{
+			return keyword.FormatKeyword() + " " + value.ToString();
+		}
+	}
+	/*
     public abstract class TouchstoneKeyword
     {
         internal abstract string KeywordText { get; }

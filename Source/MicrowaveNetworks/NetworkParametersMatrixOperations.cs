@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using MicrowaveNetworks.Matrices;
 using System.Linq;
+using MathNet.Numerics;
 
 namespace MicrowaveNetworks
 {
@@ -50,5 +51,53 @@ namespace MicrowaveNetworks
 
             return p1.ConvertParameterType<TMatrix>();
         }
-    }
+
+        /// <summary>
+        /// Deembeds (removes) the <see cref="NetworkParametersMatrix"/> from the input (left) side of the current matrix.
+        /// </summary>
+        /// <typeparam name="TMatrix">The type of <see cref="NetworkParametersMatrix"/>.</typeparam>
+        /// <param name="left">The <see cref="NetworkParametersMatrix"/> to deembed from the current object.</param>
+        /// <returns>A new <typeparamref name="TMatrix"/> with <paramref name="left"/> deembeded from the current object.</returns>
+        /// <remarks>In T-parameters, this method computes: <code>T_d = T_Left^-1 * T_this</code></remarks>
+		public TMatrix DeembedLeft<TMatrix>(TMatrix left) where TMatrix : NetworkParametersMatrix
+        {
+			TransferParametersMatrix t = this.ToTParameters();
+			TransferParametersMatrix tLeftInv = left.ToTParameters().Inverse();
+            TransferParametersMatrix deembed = tLeftInv * t;
+			return deembed.ConvertParameterType<TMatrix>();
+		}
+
+		/// <summary>
+		/// Deembeds (removes) the <see cref="NetworkParametersMatrix"/> from the output (right) side of the current matrix.
+		/// </summary>
+		/// <typeparam name="TMatrix">The type of <see cref="NetworkParametersMatrix"/>.</typeparam>
+		/// <param name="right">The <see cref="NetworkParametersMatrix"/> to deembed from the current object.</param>
+		/// <returns>A new <typeparamref name="TMatrix"/> with <paramref name="right"/> deembeded from the current object.</returns>
+		/// <remarks>In T-parameters, this method computes: <code>T_d = T_this * T_Right^-1</code></remarks>
+		public TMatrix DeembedRight<TMatrix>(TMatrix right) where TMatrix : NetworkParametersMatrix
+		{
+			TransferParametersMatrix t = this.ToTParameters();
+			TransferParametersMatrix tRightInv = right.ToTParameters().Inverse();
+			TransferParametersMatrix deembed = t * tRightInv;
+			return deembed.ConvertParameterType<TMatrix>();
+		}
+
+		/// <summary>
+		/// Deembeds (removes) the <see cref="NetworkParametersMatrix"/> from the input (left) and output (right) side of the current matrix.
+		/// </summary>
+		/// <typeparam name="TMatrix">The type of <see cref="NetworkParametersMatrix"/>.</typeparam>
+		/// <param name="left">The <see cref="NetworkParametersMatrix"/> to deembed from the input (left) side current object.</param>
+		/// <param name="right">The <see cref="NetworkParametersMatrix"/> to deembed from the output (right) side current object.</param>
+		/// <returns>A new <typeparamref name="TMatrix"/> with <paramref name="right"/> deembeded from the current object.</returns>
+		/// <remarks>In T-parameters, this method computes: <code>T_d = T_Left^-1 * T_this * T_Right^-1</code></remarks>
+		public TMatrix Deembed<TMatrix>(TMatrix left, TMatrix right) where TMatrix : NetworkParametersMatrix
+		{
+            TransferParametersMatrix t = this.ToTParameters();
+            TransferParametersMatrix tLeftInv = left.ToTParameters().Inverse();
+			TransferParametersMatrix tRightInv = right.ToTParameters().Inverse();
+
+			TransferParametersMatrix deembed = tLeftInv * t * tRightInv;
+            return deembed.ConvertParameterType<TMatrix>();
+		}
+	}
 }

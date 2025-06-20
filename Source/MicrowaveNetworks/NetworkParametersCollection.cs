@@ -11,6 +11,7 @@ using MicrowaveNetworks.Internal;
 using System.Threading.Tasks;
 
 using MathNet.Numerics;
+using System.Runtime.CompilerServices;
 
 namespace MicrowaveNetworks
 {
@@ -342,8 +343,76 @@ namespace MicrowaveNetworks
             return collection;
         }
 
-        #region Explicit ICollection Implementations
-        bool ICollection<FrequencyParametersPair>.IsReadOnly => false;
+
+		/// <summary>
+		/// Deembeds (removes) the <see cref="INetworkParametersCollection"/> from the input (left) side of the current collection for all common
+        /// frequencies.
+		/// </summary>
+		/// <typeparam name="T">The type of <see cref="NetworkParametersMatrix"/>.</typeparam>
+		/// <param name="left">The <see cref="NetworkParametersMatrix"/> to deembed from the current object.</param>
+		/// <returns>A new <see cref="NetworkParametersCollection{TMatrix}"/> with <paramref name="left"/> deembeded from the current object
+        /// at all common frequencies.</returns>
+		/// <remarks>In T-parameters, this method computes: <code>T_d = T_Left^-1 * T_this</code></remarks>
+		public NetworkParametersCollection<T> DeembedLeft<T>(INetworkParametersCollection left) where T : NetworkParametersMatrix
+		{
+            var commonFrequencies = left.Frequencies.Union(Frequencies);
+
+			NetworkParametersCollection<T> deembeded = new NetworkParametersCollection<T>(NumberOfPorts);
+
+			foreach (var frequency in commonFrequencies)
+			{
+                deembeded[frequency] = (T)this[frequency].DeembedLeft(left[frequency]);
+			}
+			return deembeded;
+		}
+
+		/// <summary>
+		/// Deembeds (removes) the <see cref="INetworkParametersCollection"/> from the output (right) side of the current collection for all common
+		/// frequencies.
+		/// </summary>
+		/// <typeparam name="T">The type of <see cref="NetworkParametersMatrix"/>.</typeparam>
+		/// <param name="right">The <see cref="NetworkParametersMatrix"/> to deembed from the current object.</param>
+		/// <returns>A new <see cref="NetworkParametersCollection{TMatrix}"/> with <paramref name="right"/> deembeded from the current object
+		/// at all common frequencies.</returns>
+		/// <remarks>In T-parameters, this method computes: <code>T_d = T_this * T_Right^-1</code></remarks>
+		public NetworkParametersCollection<T> DeembedRight<T>(INetworkParametersCollection right) where T : NetworkParametersMatrix
+		{
+			var commonFrequencies = right.Frequencies.Union(Frequencies);
+
+			NetworkParametersCollection<T> deembeded = new NetworkParametersCollection<T>(NumberOfPorts);
+
+			foreach (var frequency in commonFrequencies)
+			{
+				deembeded[frequency] = (T)this[frequency].DeembedRight(right[frequency]);
+			}
+			return deembeded;
+		}
+
+		/// <summary>
+		/// Deembeds (removes) the <see cref="INetworkParametersCollection"/> from the input (left) and  output (right) side of the current collection 
+		/// for all common frequencies.
+		/// </summary>
+		/// <typeparam name="T">The type of <see cref="NetworkParametersMatrix"/>.</typeparam>
+		/// <param name="left">The <see cref="NetworkParametersMatrix"/> to deembed from the input (left) side of the current object.</param>
+		/// <param name="right">The <see cref="NetworkParametersMatrix"/> to deembed from the output (right) side of the current object.</param>
+		/// <returns>A new <see cref="NetworkParametersCollection{TMatrix}"/> with <paramref name="left"/> and <paramref name="right"/> deembeded from the current object
+		/// at all common frequencies.</returns>
+		/// <remarks>In T-parameters, this method computes: <code>T_d = T_Left^-1 * T_this * T_Right^-1</code></remarks>
+		public NetworkParametersCollection<T> Deembed<T>(INetworkParametersCollection left, INetworkParametersCollection right) where T : NetworkParametersMatrix
+		{
+			var commonFrequencies = right.Frequencies.Union(Frequencies);
+
+			NetworkParametersCollection<T> deembeded = new NetworkParametersCollection<T>(NumberOfPorts);
+
+			foreach (var frequency in commonFrequencies)
+			{
+				deembeded[frequency] = (T)this[frequency].Deembed(left[frequency], right[frequency]);
+			}
+			return deembeded;
+		}
+
+		#region Explicit ICollection Implementations
+		bool ICollection<FrequencyParametersPair>.IsReadOnly => false;
 
 
         NetworkParametersMatrix INetworkParametersCollection.this[double frequency]
@@ -402,16 +471,6 @@ namespace MicrowaveNetworks
         }
         #endregion
 
-    }
-
-    enum InteropolationMethods
-    {
-        Linear
-    }
-    internal class InteropolationOptions
-    {
-        public bool Enabled;
-        public InteropolationMethods Method;
     }
 
     /// <summary>
