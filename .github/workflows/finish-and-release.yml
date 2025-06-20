@@ -27,7 +27,7 @@ jobs:
     needs: [gitflow-finish]
     env:
       SOURCE: Source
-      TESTS: Tests
+      TESTS: Source
       GITHUB_PACKAGE_SOURCE: ${{ format('https://nuget.pkg.github.com/{0}/index.json', github.ACTOR) }}
       NUGET_PACKAGE_SOURCE: 'https://api.nuget.org/v3/index.json'
 

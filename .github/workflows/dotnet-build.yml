@@ -2,7 +2,7 @@ name: .NET Build and Test
 
 env:
     SOURCE: Source
-    TESTS: Tests
+    TESTS: Source
     PACKAGE_SOURCE: ${{ format('https://nuget.pkg.github.com/{0}/index.json', github.ACTOR) }}
 
 on:
