@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using MicrowaveNetworks.Internal;
 using MicrowaveNetworks.Matrices;
 
 namespace MicrowaveNetworks.Touchstone.IO
@@ -71,9 +72,12 @@ namespace MicrowaveNetworks.Touchstone.IO
                 {
                     var (frequency, parameters) = tsReader.ParseRawData(rawFlattenedMatrix);
 
+                    rawFlattenedMatrix.Count.IsPerfectSquare(out int numPorts);
+                    ListFormat format = numPorts == 2 ? ListFormat.SourcePortMajor : ListFormat.DestinationPortMajor;                    
+
                     NetworkParametersMatrix matrix = tsReader.Options.Parameter switch
                     {
-                        ParameterType.Scattering => new ScatteringParametersMatrix(parameters, ListFormat.SourcePortMajor),
+                        ParameterType.Scattering => new ScatteringParametersMatrix(parameters, format),
                         _ => throw new NotImplementedException($"Support for parameter type {tsReader.Options.Parameter} has not been implemented."),
                     };
 

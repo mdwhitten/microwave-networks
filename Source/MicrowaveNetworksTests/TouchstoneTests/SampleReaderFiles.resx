@@ -139,6 +139,9 @@
   <data name="SixPort_v2_MixedMode" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\ReadTests\SixPort_v2_MixedMode.s6p;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
+  <data name="TwoPort_v1" type="System.Resources.ResXFileRef, System.Windows.Forms">
+    <value>..\Resources\ReadTests\TwoPort_v1.s2p;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
+  </data>
   <data name="TwoPort_v2_12_21" type="System.Resources.ResXFileRef, System.Windows.Forms">
     <value>..\Resources\ReadTests\TwoPort_v2_12_21.s2p;System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089;utf-8</value>
   </data>
